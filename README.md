@@ -10,7 +10,7 @@ chaque equipe grille A et B doivent proteger leur grille pour ne pas se faire ca
 
 ### Equipe A
 
-- un groupe ![Blue text](BLUE TEAM) equipe A defend la grille A contre equipe B pour proteger flag A
+- un groupe $${\color{blue}BLUE TEAM}$$ equipe A defend la grille A contre equipe B pour proteger flag A
 - un groupe ![#f03c15](READ TEAM) equipe A attaque la grille B pour capture flag B
 
 ### Equipe B
