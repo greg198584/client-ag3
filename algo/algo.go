@@ -22,6 +22,7 @@ const (
 
 type Algo struct {
 	Name       string
+	ApiUrl     string
 	ID         string
 	Pc         structure.ProgrammeContainer
 	InfosGrid  structure.GridInfos
@@ -29,18 +30,24 @@ type Algo struct {
 	StatusCode int
 }
 
-func _LoadProgramme(name string) (psi structure.ProgrammeStatusInfos, pc structure.ProgrammeContainer, err error) {
+func _LoadProgramme(name string, apiteam string) (psi structure.ProgrammeStatusInfos, pc structure.ProgrammeContainer, err error) {
 	pc, err = _GetProgrammeFile(name)
 	if pc.ID == "" || err != nil {
 		//tools.Fail(fmt.Sprintf("no content [%s][%v]", name, pc))
 		pc, _ = _CreateProgramme(name)
 		return
 	} else {
+		url := ""
+		if apiteam == "a" {
+			url = api.API_URL_A
+		} else {
+			url = api.API_URL_B
+		}
 		reqBodyBytes := new(bytes.Buffer)
 		json.NewEncoder(reqBodyBytes).Encode(pc)
 		res, statusCode, _ := api.RequestApi(
 			"POST",
-			fmt.Sprintf("%s/%s", api.API_URL, api.ROUTE_LOAD_PROGRAMME),
+			fmt.Sprintf("%s/%s", url, api.ROUTE_LOAD_PROGRAMME),
 			reqBodyBytes.Bytes(),
 		)
 		if statusCode == http.StatusCreated || statusCode == http.StatusOK {
@@ -94,13 +101,14 @@ func _GetProgrammeFile(name string) (pc structure.ProgrammeContainer, err error)
 	}
 	return
 }
-func NewAlgo(name string) (algo *Algo, err error) {
+func NewAlgo(name string, apiteam string) (algo *Algo, err error) {
 	tools.Title(fmt.Sprintf("chargement programme [%s]", name))
-	psi, pc, err := _LoadProgramme(name)
+	psi, pc, err := _LoadProgramme(name, apiteam)
 	algo = &Algo{
-		Name: name,
-		Psi:  psi,
-		Pc:   pc,
+		Name:   name,
+		Psi:    psi,
+		Pc:     pc,
+		ApiUrl: apiteam,
 	}
 	if algo.Psi.Programme.ID == "" {
 		if ok, _ := algo.GetInfosProgramme(); !ok {
@@ -115,7 +123,7 @@ func (a *Algo) GetInfosProgramme() (ok bool, err error) {
 	//tools.Title(fmt.Sprintf("infos programme [%s]", a.Name))
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s", api.API_URL, api.ROUTE_STATUS_PROGRAMME, a.Pc.ID, a.Pc.SecretID),
+		fmt.Sprintf("%s/%s/%s/%s", a.ApiUrl, api.ROUTE_STATUS_PROGRAMME, a.Pc.ID, a.Pc.SecretID),
 		nil,
 	)
 	a.StatusCode = statusCode
@@ -337,59 +345,6 @@ func (a *Algo) GetZoneinfos() (ok bool, zoneInfos structure.ZoneInfos) {
 	}
 	return true, zoneInfos
 }
-
-//func (a *Algo) Attack(celluleID int, targetID string) {
-//	for j := 0; j < ENERGY_MAX_ATTACK; j++ {
-//		if ok, res, _ := a.Destroy(celluleID, targetID); !ok {
-//			jsonPretty, _ := tools.PrettyString(res)
-//			fmt.Println(jsonPretty)
-//			tools.Fail("erreur attack")
-//			return
-//		}
-//	}
-//}
-//func (a *Algo) Defense(celluleID int, targetID string) {
-//	for j := 0; j < ENERGY_MAX_ATTACK; j++ {
-//		if ok, resBuild, _ := a.Rebuild(celluleID, targetID); !ok {
-//			jsonPretty, _ := tools.PrettyString(resBuild)
-//			fmt.Println(jsonPretty)
-//			tools.Fail("erreur rebuild")
-//			break
-//		}
-//	}
-//}
-//func (a *Algo) CheckAttack(printInfo bool) {
-//	maxValeur := a.Psi.Programme.Level * MAX_VALEUR
-//	for _, cellule := range a.Psi.Programme.Cellules {
-//		if cellule.CurrentAccesLog.ReceiveDestroy {
-//			title := aurora.BgYellow("xxx Receveive destroy from")
-//			tools.Title(fmt.Sprintf(
-//				"\t%s >>> [%s] cellule [%d]",
-//				title,
-//				aurora.Cyan(cellule.CurrentAccesLog.PID),
-//				cellule.ID,
-//			))
-//		}
-//		if cellule.Valeur < maxValeur && cellule.Energy > 0 {
-//			if ok, resBuild, _ := a.Rebuild(cellule.ID, a.ID); !ok {
-//				jsonPretty, _ := tools.PrettyString(resBuild)
-//				fmt.Println(jsonPretty)
-//				tools.Fail("erreur rebuild")
-//			}
-//			if cellule.CurrentAccesLog.ReceiveDestroy {
-//				if ok, res, _ := a.Destroy(cellule.ID, cellule.CurrentAccesLog.PID); !ok {
-//					jsonPretty, _ := tools.PrettyString(res)
-//					fmt.Println(jsonPretty)
-//					tools.Fail("erreur attack")
-//				}
-//			}
-//			if printInfo {
-//				a.PrintInfo(false)
-//			}
-//		}
-//	}
-//	return
-//}
 func (a *Algo) SearchFlag(cellules []structure.CelluleInfos) (flagFound bool) {
 	for _, cellule := range cellules {
 		if cellule.Status {

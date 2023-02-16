@@ -24,10 +24,16 @@ func _IsExistFile(name string) bool {
 		return true
 	}
 }
-func _CreateProgramme(name string) (programme structure.ProgrammeContainer, err error) {
+func _CreateProgramme(name string, apiteam string) (programme structure.ProgrammeContainer, err error) {
+	url := ""
+	if apiteam == "a" {
+		url = api.API_URL_A
+	} else {
+		url = api.API_URL_B
+	}
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s", api.API_URL, api.ROUTE_NEW_PROGRAMME, name),
+		fmt.Sprintf("%s/%s/%s", url, api.ROUTE_NEW_PROGRAMME, name),
 		nil,
 	)
 	if err != nil {
@@ -60,47 +66,6 @@ func _LoadProgramme(name string) (psi structure.ProgrammeStatusInfos, err error)
 	}
 	return
 }
-func _Save(name string) (pc structure.ProgrammeContainer, err error) {
-	currentPC, err := _GetProgrammeFile(name)
-	reqBodyBytes := new(bytes.Buffer)
-	json.NewEncoder(reqBodyBytes).Encode(currentPC)
-	res, statusCode, err := api.RequestApi(
-		"GET",
-		fmt.Sprintf("%s/%s/%s/%s", api.API_URL, api.ROUTE_SAVE_PROGRAMME, currentPC.ID, currentPC.SecretID),
-		nil,
-	)
-	if statusCode == http.StatusCreated {
-		err = json.Unmarshal(res, &pc)
-		tools.CreateJsonFile(fmt.Sprintf("%s.json", name), pc)
-		tools.Success("backup OK")
-	} else {
-		err = errors.New("erreur chargement programme")
-		jsonPretty, _ := tools.PrettyString(res)
-		tools.Fail(fmt.Sprintf("status = [%d]", statusCode))
-		fmt.Println(jsonPretty)
-	}
-	return
-}
-func _UpgradeProgramme(name string) (pc structure.ProgrammeContainer, err error) {
-	currentPC, err := _GetProgrammeFile(name)
-	reqBodyBytes := new(bytes.Buffer)
-	json.NewEncoder(reqBodyBytes).Encode(currentPC)
-	res, statusCode, err := api.RequestApi(
-		"POST",
-		fmt.Sprintf("%s/%s", api.API_URL, api.ROUTE_UPGRADE_PROGRAMME),
-		reqBodyBytes.Bytes(),
-	)
-	if statusCode == http.StatusCreated {
-		err = json.Unmarshal(res, &pc)
-		tools.CreateJsonFile(fmt.Sprintf("%s.json", name), pc)
-	} else {
-		err = errors.New("erreur chargement programme")
-		jsonPretty, _ := tools.PrettyString(res)
-		tools.Info(fmt.Sprintf("status = [%d]", statusCode))
-		fmt.Println(jsonPretty)
-	}
-	return
-}
 func _GetProgrammeFile(name string) (pc *structure.ProgrammeContainer, err error) {
 	file, err := tools.GetJsonFile(fmt.Sprintf("%s.json", name))
 	if err != nil {
@@ -112,11 +77,11 @@ func _GetProgrammeFile(name string) (pc *structure.ProgrammeContainer, err error
 	}
 	return
 }
-func New(name string) {
+func New(name string, apiteam string) {
 	tools.Title(fmt.Sprintf("création programme [%s]", name))
 	if _IsExistFile(name) == false {
 
-		programmeContainer, err := _CreateProgramme(name)
+		programmeContainer, err := _CreateProgramme(name, apiteam)
 		if err != nil {
 			tools.Fail(err.Error())
 		} else {
@@ -128,52 +93,31 @@ func New(name string) {
 		tools.Warning(fmt.Sprintf("programme file exist"))
 	}
 }
-
-//func Save(name string) {
-//	tools.Title(fmt.Sprintf("save programme [%s]", name))
-//	_, err := _Save(name)
-//	if err != nil {
-//		tools.Fail(fmt.Sprintf(" backup [%s] FAIL [%s]", name, err.Error()))
-//	} else {
-//		tools.Success(fmt.Sprintf(" backup [%s] OK", name))
-//		GetInfoProgramme(name, false)
-//	}
-//}
 func Info(pc *structure.ProgrammeContainer) {
 	reqBodyBytes := new(bytes.Buffer)
 	json.NewEncoder(reqBodyBytes).Encode(pc.Programme)
 	jsonPretty, _ := tools.PrettyString(reqBodyBytes.Bytes())
 	fmt.Println(jsonPretty)
 }
-func Load(name string) {
+func Load(name string, apiteam string) {
 	tools.Title(fmt.Sprintf("chargement programme [%s]", name))
-	current, err := algo.NewAlgo(name)
+	current, err := algo.NewAlgo(name, apiteam)
 	if err != nil {
 		//panic(err)
 	}
 	current.PrintInfo(true)
 }
-func Upgrade(name string) {
-	tools.Title(fmt.Sprintf("chargement programme [%s]", name))
-	_, err := _UpgradeProgramme(name)
-	if err != nil {
-		tools.Fail(fmt.Sprintf(" upgrade [%s] FAIL [%s]", name, err.Error()))
-	} else {
-		tools.Success(fmt.Sprintf("upgrade [%s] OK", name))
-		GetInfoProgramme(name, false)
-	}
-}
-func Delete(name string) {
+func Delete(name string, apiteam string) {
 	tools.Title(fmt.Sprintf("suppression programme [%s]", name))
-	current, err := algo.NewAlgo(name)
+	current, err := algo.NewAlgo(name, apiteam)
 	if err != nil {
 		//panic(err)
 	}
 	current.Unset()
 }
-func Scan(name string) {
+func Scan(name string, apiteam string) {
 	tools.Title(fmt.Sprintf("Programme [%s] scan", name))
-	current, err := algo.NewAlgo(name)
+	current, err := algo.NewAlgo(name, apiteam)
 	if err != nil {
 		//panic(err)
 	}
@@ -190,9 +134,9 @@ func Scan(name string) {
 		}
 	}
 }
-func Explore(name string, celluleID string) {
+func Explore(name string, apiteam string, celluleID string) {
 	tools.Title(fmt.Sprintf("Programme [%s] explore cellule [%s]", name, celluleID))
-	current, err := algo.NewAlgo(name)
+	current, err := algo.NewAlgo(name, apiteam)
 	if err != nil {
 		//panic(err)
 	}
@@ -210,7 +154,7 @@ func Explore(name string, celluleID string) {
 		}
 	}
 }
-func Destroy(name string, celluleID int, targetID string, energy int) {
+func Destroy(name string, apiteam string, celluleID int, targetID string, energy int) {
 	tools.Title(fmt.Sprintf(
 		"Programme [%s] destroy -> [%s] cellule [%s] energy [%s]",
 		name,
@@ -218,7 +162,7 @@ func Destroy(name string, celluleID int, targetID string, energy int) {
 		targetID,
 		algo.ENERGY_MAX_ATTACK,
 	))
-	current, err := algo.NewAlgo(name)
+	current, err := algo.NewAlgo(name, apiteam)
 	if err != nil {
 		//panic(err)
 	}
@@ -226,7 +170,7 @@ func Destroy(name string, celluleID int, targetID string, energy int) {
 	current.PrintInfo(false)
 	return
 }
-func Rebuild(name string, celluleID int, targetID string, energy int) {
+func Rebuild(name string, apiteam string, celluleID int, targetID string, energy int) {
 	tools.Title(fmt.Sprintf(
 		"Programme [%s] rebuild -> [%s] cellule [%s] energy [%s]",
 		name,
@@ -234,7 +178,7 @@ func Rebuild(name string, celluleID int, targetID string, energy int) {
 		targetID,
 		algo.ENERGY_MAX_ATTACK,
 	))
-	current, err := algo.NewAlgo(name)
+	current, err := algo.NewAlgo(name, apiteam)
 	if err != nil {
 		//panic(err)
 	}
@@ -396,74 +340,6 @@ func DestroyZone(name string, celluleID int, energy int, all bool) {
 	tools.PrintZoneInfos(zoneInfos)
 }
 
-//func AttackTarget(current *algo.Algo, pid string) {
-//	for _, cellule := range current.Psi.Programme.Cellules {
-//		if cellule.Status && cellule.Energy > 0 {
-//			statusTarget := true
-//			if statusTarget {
-//				current.Attack(cellule.ID, pid)
-//			}
-//		}
-//	}
-//}
-
-/*func Attack(name string, PidList []string, printInfo bool) {
-	current, err := algo.NewAlgo(name)
-	if err != nil {
-		//panic(err)
-	}
-	status := true
-	for status {
-		time.Sleep(algo.TIME_MILLISECONDE * time.Millisecond)
-		current.GetInfosProgramme()
-		if printInfo {
-			current.PrintInfo(false)
-		}
-		if current.Psi.Programme.ID != "" {
-			status = current.Psi.Programme.Status
-		}
-		_, programmes := current.GetProgramme()
-		for _, pid := range programmes {
-			if len(PidList) > 0 {
-				for _, pidTarget := range PidList {
-					if pid == pidTarget {
-						AttackTarget(current, pid)
-					}
-				}
-			} else {
-				AttackTarget(current, pid)
-			}
-			if current.Psi.LockProgramme[pid].Status == false {
-				break
-			}
-		}
-		current.CheckAttack(printInfo)
-	}
-}
-func CheckAttack(name string, printInfo bool) {
-	current, err := algo.NewAlgo(name)
-	if err != nil {
-		//panic(err)
-	}
-	status := true
-	for status {
-		time.Sleep(algo.TIME_MILLISECONDE * time.Millisecond)
-		current.GetInfosProgramme()
-		current.PrintInfo(false)
-		if current.Psi.Programme.ID != "" {
-			status = current.Psi.Programme.Status
-		}
-		current.CheckAttack(printInfo)
-	}
-}
-func MovePosition(name string, secteurID string, zoneID string) {
-	current, err := algo.NewAlgo(name)
-	if err != nil {
-		//panic(err)
-	}
-	current.Move(secteurID, zoneID)
-	current.PrintInfo(true)
-}*/
 func Monitoring(name string, printGrid bool) {
 	current, err := algo.NewAlgo(name)
 	if err != nil {
