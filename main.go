@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/greg198584/gridclient/programme"
+	"github.com/greg198584/client-ag3/programme"
 	mowcli "github.com/jawher/mow.cli"
 	"os"
 	"strconv"

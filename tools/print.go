@@ -2,7 +2,7 @@ package tools
 
 import (
 	"fmt"
-	"github.com/greg198584/gridclient/structure"
+	"github.com/greg198584/client-ag3/structure"
 	"github.com/logrusorgru/aurora"
 	"strconv"
 	"time"
