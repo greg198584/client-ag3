@@ -68,6 +68,7 @@ type CelluleInfos struct {
 }
 type Programme struct {
 	ID           string           `json:"id"`
+	BlueTeam     bool             `json:"blue_team"`
 	Name         string           `json:"name"`
 	Position     Position         `json:"position"`
 	NextPosition Position         `json:"last_position"`
