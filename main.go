@@ -179,7 +179,7 @@ func main() {
 	})
 	app.Command("status", "status grille", func(cmd *mowcli.Cmd) {
 		var (
-			zoneActif = cmd.BoolOpt("a actif", false, "afficher que les zone status true")
+			zoneActif = cmd.BoolOpt("t true", false, "afficher que les zone status true")
 			apiteam   = cmd.StringOpt("a api", "", "api a or b")
 		)
 		cmd.Action = func() {
@@ -250,7 +250,7 @@ func main() {
 			apiteam    = cmd.StringOpt("a api", "", "api a or b")
 			celluleID  = cmd.StringOpt("c cellule", "", "ID cellule")
 			energy     = cmd.StringOpt("e energy", "", "quantite energy utiliser par cellule")
-			allCellule = cmd.BoolOpt("a all", false, "toutes les cellules")
+			allCellule = cmd.BoolOpt("f full", false, "toutes les cellules")
 		)
 		cmd.Action = func() {
 			celluleIDint, _ := strconv.Atoi(*celluleID)
