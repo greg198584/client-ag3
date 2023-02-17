@@ -49,6 +49,17 @@ func main() {
 			programme.MovePosition(*pname, *apiteam, *secteurID, *zoneID)
 		}
 	})
+	app.Command("quick_move", "[blue team] deplacer un programme sur la grille", func(cmd *mowcli.Cmd) {
+		var (
+			pname     = cmd.StringOpt("n name", "", "nom du programme")
+			apiteam   = cmd.StringOpt("a api", "", "api a or b")
+			secteurID = cmd.StringOpt("s secteur", "", "ID du secteur")
+			zoneID    = cmd.StringOpt("z zone", "", "ID zone")
+		)
+		cmd.Action = func() {
+			programme.QuickMovePosition(*pname, *apiteam, *secteurID, *zoneID)
+		}
+	})
 	app.Command("estimate_move", "estimation temp deplacement sur zone", func(cmd *mowcli.Cmd) {
 		var (
 			pname     = cmd.StringOpt("n name", "", "nom du programme")
@@ -57,7 +68,7 @@ func main() {
 			zoneID    = cmd.StringOpt("z zone", "", "ID zone")
 		)
 		cmd.Action = func() {
-			programme.EstimateMove(*pname, *apiteam*secteurID, *zoneID)
+			programme.EstimateMove(*pname, *apiteam, *secteurID, *zoneID)
 		}
 	})
 	app.Command("stop_move", "stopper navigation en cours ( retour zone de depart )", func(cmd *mowcli.Cmd) {
@@ -172,7 +183,7 @@ func main() {
 			apiteam   = cmd.StringOpt("a api", "", "api a or b")
 		)
 		cmd.Action = func() {
-			programme.GetStatusGrid(*zoneActif, *apiteam)
+			programme.GetStatusGrid(*apiteam, *zoneActif)
 		}
 	})
 	app.Command("infos", "infos programme", func(cmd *mowcli.Cmd) {

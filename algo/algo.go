@@ -34,7 +34,7 @@ func _LoadProgramme(name string, apiteam string) (psi structure.ProgrammeStatusI
 	pc, err = _GetProgrammeFile(name)
 	if pc.ID == "" || err != nil {
 		//tools.Fail(fmt.Sprintf("no content [%s][%v]", name, pc))
-		pc, _ = _CreateProgramme(name)
+		pc, _ = _CreateProgramme(name, apiteam)
 		return
 	} else {
 		url := ""
@@ -53,17 +53,23 @@ func _LoadProgramme(name string, apiteam string) (psi structure.ProgrammeStatusI
 		if statusCode == http.StatusCreated || statusCode == http.StatusOK {
 			_ = json.Unmarshal(res, &psi)
 		} else {
-			pc, _ = _CreateProgramme(name)
+			pc, _ = _CreateProgramme(name, apiteam)
 		}
 	}
 	return
 }
-func _CreateProgramme(name string) (programme structure.ProgrammeContainer, err error) {
+func _CreateProgramme(name string, apiteam string) (programme structure.ProgrammeContainer, err error) {
 	tools.Title(fmt.Sprintf("création programme [%s]", name))
 	if _IsExistFile(name) == false {
+		url := ""
+		if apiteam == "a" {
+			url = api.API_URL_A
+		} else {
+			url = api.API_URL_B
+		}
 		res, statusCode, err := api.RequestApi(
 			"GET",
-			fmt.Sprintf("%s/%s/%s", api.API_URL, api.ROUTE_NEW_PROGRAMME, name),
+			fmt.Sprintf("%s/%s/%s", url, api.ROUTE_NEW_PROGRAMME, name),
 			nil,
 		)
 		if err != nil {
@@ -137,7 +143,7 @@ func (a *Algo) GetInfosProgramme() (ok bool, err error) {
 func (a *Algo) NavigationStop() (ok bool, err error) {
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s", api.API_URL, api.ROUTE_NAVIGATION_PROGRAMME_STOP, a.Pc.ID, a.Pc.SecretID),
+		fmt.Sprintf("%s/%s/%s/%s", a.ApiUrl, api.ROUTE_NAVIGATION_PROGRAMME_STOP, a.Pc.ID, a.Pc.SecretID),
 		nil,
 	)
 	a.StatusCode = statusCode
@@ -151,7 +157,7 @@ func (a *Algo) NavigationStop() (ok bool, err error) {
 func (a *Algo) ExplorationStop() (ok bool, err error) {
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s", api.API_URL, api.ROUTE_EXPLORATION_PROGRAMME_STOP, a.Pc.ID, a.Pc.SecretID),
+		fmt.Sprintf("%s/%s/%s/%s", a.ApiUrl, api.ROUTE_EXPLORATION_PROGRAMME_STOP, a.Pc.ID, a.Pc.SecretID),
 		nil,
 	)
 	a.StatusCode = statusCode
@@ -166,7 +172,7 @@ func (a *Algo) Delete() (ok bool, err error) {
 	tools.Title(fmt.Sprintf("suppression programme [%s]", a.Name))
 	_, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s", api.API_URL, api.ROUTE_UNSET_PROGRAMME, a.Pc.ID, a.Pc.SecretID),
+		fmt.Sprintf("%s/%s/%s/%s", a.ApiUrl, api.ROUTE_UNSET_PROGRAMME, a.Pc.ID, a.Pc.SecretID),
 		nil,
 	)
 	a.StatusCode = statusCode
@@ -179,7 +185,7 @@ func (a *Algo) Move(secteurID string, zoneID string) (ok bool, err error) {
 	tools.Title(fmt.Sprintf("Programme [%s] Move to S%s-Z%s", a.Name, secteurID, zoneID))
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s/%s/%s", api.API_URL, api.ROUTE_MOVE_PROGRAMME, a.Pc.ID, a.Pc.SecretID, secteurID, zoneID),
+		fmt.Sprintf("%s/%s/%s/%s/%s/%s", a.ApiUrl, api.ROUTE_MOVE_PROGRAMME, a.Pc.ID, a.Pc.SecretID, secteurID, zoneID),
 		nil,
 	)
 	if err != nil || statusCode != http.StatusOK {
@@ -193,7 +199,7 @@ func (a *Algo) EstimateMove(secteurID string, zoneID string) (data structure.Mov
 	tools.Title(fmt.Sprintf("Programme [%s] Estimate Move to S%s-Z%s", a.Name, secteurID, zoneID))
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s/%s/%s", api.API_URL, api.ROUTE_ESTIMATE_MOVE_PROGRAMME, a.Pc.ID, a.Pc.SecretID, secteurID, zoneID),
+		fmt.Sprintf("%s/%s/%s/%s/%s/%s", a.ApiUrl, api.ROUTE_ESTIMATE_MOVE_PROGRAMME, a.Pc.ID, a.Pc.SecretID, secteurID, zoneID),
 		nil,
 	)
 	if err != nil || statusCode != http.StatusOK {
@@ -206,7 +212,7 @@ func (a *Algo) StopMove() (ok bool, err error) {
 	tools.Title(fmt.Sprintf("Programme [%s] stop move", a.Name))
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s", api.API_URL, api.ROUTE_STOP_MOVE_PROGRAMME, a.Pc.ID, a.Pc.SecretID),
+		fmt.Sprintf("%s/%s/%s/%s", a.ApiUrl, api.ROUTE_STOP_MOVE_PROGRAMME, a.Pc.ID, a.Pc.SecretID),
 		nil,
 	)
 	if err != nil || statusCode != http.StatusOK {
@@ -219,7 +225,7 @@ func (a *Algo) StopMove() (ok bool, err error) {
 func (a *Algo) Scan() (ok bool, res []byte, err error) {
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s", api.API_URL, api.ROUTE_SCAN_PROGRAMME, a.Pc.ID, a.Pc.SecretID),
+		fmt.Sprintf("%s/%s/%s/%s", a.ApiUrl, api.ROUTE_SCAN_PROGRAMME, a.Pc.ID, a.Pc.SecretID),
 		nil,
 	)
 	if err != nil || statusCode != http.StatusOK {
@@ -231,7 +237,7 @@ func (a *Algo) Explore(celluleID int) (ok bool, res []byte, err error) {
 	tools.Title(fmt.Sprintf("Programme [%s] explore cellule [%d]", a.Name, celluleID))
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s/%d", api.API_URL, api.ROUTE_EXPLORE_PROGRAMME, a.Pc.ID, a.Pc.SecretID, celluleID),
+		fmt.Sprintf("%s/%s/%s/%s/%d", a.ApiUrl, api.ROUTE_EXPLORE_PROGRAMME, a.Pc.ID, a.Pc.SecretID, celluleID),
 		nil,
 	)
 	if err != nil || statusCode != http.StatusOK {
@@ -244,7 +250,7 @@ func (a *Algo) DestroyZone(celluleID int, energy int) (ok bool, res []byte, err 
 	tools.Title(fmt.Sprintf("\t%s >>> cellule [%d]", title, celluleID))
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s/%d/%d", api.API_URL, api.ROUTE_DESTROY_ZONE, a.Pc.ID, a.Pc.SecretID, celluleID, energy),
+		fmt.Sprintf("%s/%s/%s/%s/%d/%d", a.ApiUrl, api.ROUTE_DESTROY_ZONE, a.Pc.ID, a.Pc.SecretID, celluleID, energy),
 		nil,
 	)
 	if err != nil || statusCode != http.StatusOK {
@@ -259,7 +265,7 @@ func (a *Algo) Destroy(celluleID int, targetID string, energy int) (ok bool, res
 	tools.Title(fmt.Sprintf("\t%s >>> [%s] cellule [%d]", title, aurora.Cyan(targetID), celluleID))
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s/%d/%s/%d", api.API_URL, api.ROUTE_DESTROY_PROGRAMME, a.Pc.ID, a.Pc.SecretID, celluleID, targetID, energy),
+		fmt.Sprintf("%s/%s/%s/%s/%d/%s/%d", a.ApiUrl, api.ROUTE_DESTROY_PROGRAMME, a.Pc.ID, a.Pc.SecretID, celluleID, targetID, energy),
 		nil,
 	)
 	if err != nil || statusCode != http.StatusOK {
@@ -274,7 +280,7 @@ func (a *Algo) Rebuild(celluleID int, targetID string, energy int) (ok bool, res
 	tools.Title(fmt.Sprintf("\t%s >>> [%s] cellule [%d]", title, aurora.Cyan(targetID), celluleID))
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s/%d/%s/%d", api.API_URL, api.ROUTE_REBUILD_PROGRAMME, a.Pc.ID, a.Pc.SecretID, celluleID, targetID, energy),
+		fmt.Sprintf("%s/%s/%s/%s/%d/%s/%d", a.ApiUrl, api.ROUTE_REBUILD_PROGRAMME, a.Pc.ID, a.Pc.SecretID, celluleID, targetID, energy),
 		nil,
 	)
 	if err != nil || statusCode != http.StatusOK {
@@ -288,7 +294,7 @@ func (a *Algo) GetStatusGrid() (err error) {
 	//tools.Title(fmt.Sprintf("Status grid"))
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s", api.API_URL, api.ROUTE_STATUS_GRID),
+		fmt.Sprintf("%s/%s", a.ApiUrl, api.ROUTE_STATUS_GRID),
 		nil,
 	)
 	if err != nil {
@@ -302,7 +308,7 @@ func (a *Algo) GetStatusGrid() (err error) {
 func (a *Algo) Unset() {
 	_, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s", api.API_URL, api.ROUTE_UNSET_PROGRAMME, a.Pc.ID, a.Pc.SecretID),
+		fmt.Sprintf("%s/%s/%s/%s", a.ApiUrl, api.ROUTE_UNSET_PROGRAMME, a.Pc.ID, a.Pc.SecretID),
 		nil,
 	)
 	if err != nil {
@@ -414,7 +420,7 @@ func (a *Algo) SearchEnergy(cellules []structure.CelluleInfos) (index int) {
 func (a *Algo) CaptureCellData(celluleID int, index int) (ok bool, err error) {
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s/%d/%d", api.API_URL, api.ROUTE_CAPTURE_CELL_DATA, a.Pc.ID, a.Pc.SecretID, celluleID, index),
+		fmt.Sprintf("%s/%s/%s/%s/%d/%d", a.ApiUrl, api.ROUTE_CAPTURE_CELL_DATA, a.Pc.ID, a.Pc.SecretID, celluleID, index),
 		nil,
 	)
 	if err != nil {
@@ -431,7 +437,7 @@ func (a *Algo) CaptureCellData(celluleID int, index int) (ok bool, err error) {
 func (a *Algo) CaptureTargetData(celluleID int, targetID string) (ok bool, err error) {
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s/%d/%s", api.API_URL, api.ROUTE_CAPTURE_TARGET_DATA, a.Pc.ID, a.Pc.SecretID, celluleID, targetID),
+		fmt.Sprintf("%s/%s/%s/%s/%d/%s", a.ApiUrl, api.ROUTE_CAPTURE_TARGET_DATA, a.Pc.ID, a.Pc.SecretID, celluleID, targetID),
 		nil,
 	)
 	if err != nil {
@@ -448,7 +454,7 @@ func (a *Algo) CaptureTargetData(celluleID int, targetID string) (ok bool, err e
 func (a *Algo) CaptureTargetEnergy(celluleID int, targetID string) (ok bool, err error) {
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s/%d/%s", api.API_URL, api.ROUTE_CAPTURE_TARGET_ENERGY, a.Pc.ID, a.Pc.SecretID, celluleID, targetID),
+		fmt.Sprintf("%s/%s/%s/%s/%d/%s", a.ApiUrl, api.ROUTE_CAPTURE_TARGET_ENERGY, a.Pc.ID, a.Pc.SecretID, celluleID, targetID),
 		nil,
 	)
 	if err != nil {
@@ -465,7 +471,7 @@ func (a *Algo) CaptureTargetEnergy(celluleID int, targetID string) (ok bool, err
 func (a *Algo) CaptureCellEnergy(celluleID int, index int) (ok bool, err error) {
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s/%d/%d", api.API_URL, api.ROUTE_CAPTURE_CELL_ENERGY, a.Pc.ID, a.Pc.SecretID, celluleID, index),
+		fmt.Sprintf("%s/%s/%s/%s/%d/%d", a.ApiUrl, api.ROUTE_CAPTURE_CELL_ENERGY, a.Pc.ID, a.Pc.SecretID, celluleID, index),
 		nil,
 	)
 	if err != nil {
@@ -482,7 +488,7 @@ func (a *Algo) CaptureCellEnergy(celluleID int, index int) (ok bool, err error) 
 func (a *Algo) Equilibrium() (ok bool, err error) {
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s", api.API_URL, api.ROUTE_EQUILIBRiUM, a.Pc.ID, a.Pc.SecretID),
+		fmt.Sprintf("%s/%s/%s/%s", a.ApiUrl, api.ROUTE_EQUILIBRiUM, a.Pc.ID, a.Pc.SecretID),
 		nil,
 	)
 	if err != nil {
@@ -499,7 +505,7 @@ func (a *Algo) Equilibrium() (ok bool, err error) {
 func (a *Algo) PushFlag() (ok bool, err error) {
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s", api.API_URL, api.ROUTE_PUSH_FLAG, a.Pc.ID, a.Pc.SecretID),
+		fmt.Sprintf("%s/%s/%s/%s", a.ApiUrl, api.ROUTE_PUSH_FLAG, a.Pc.ID, a.Pc.SecretID),
 		nil,
 	)
 	if err != nil {
