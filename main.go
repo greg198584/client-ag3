@@ -259,7 +259,7 @@ func main() {
 			programme.ShellCode(*pname, *apiteam)
 		}
 	})
-	app.Command("destroy", "destroy cellule programme", func(cmd *mowcli.Cmd) {
+	app.Command("active_shellcode", "activer un shellcode sur un programme", func(cmd *mowcli.Cmd) {
 		var (
 			pname     = cmd.StringOpt("n name", "", "nom du programme")
 			apiteam   = cmd.StringOpt("a api", "", "api a or b")

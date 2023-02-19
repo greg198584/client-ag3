@@ -353,7 +353,15 @@ func PrintZoneInfos(infos structure.ZoneInfos) {
 	if infos.Status {
 		statusZone = aurora.Green("TRUE")
 	}
-	PrintColorTable(header, cellData, fmt.Sprintf("<---[ Infos programme sur Zone [%d] - status [%s]]--->", infos.ID, statusZone))
+	PrintColorTable(
+		header,
+		cellData,
+		fmt.Sprintf(
+			"<---[ Infos programme sur Zone [%d] - status [%s] - shellcodelimit [%d]]--->",
+			infos.ID,
+			statusZone,
+			infos.ShellCodeLimit,
+		))
 	header = []string{"Name", "Valeur total", "Energy total", "Status", "Exploration"}
 	var progrData [][]string
 	for i := 0; i < len(infos.Programmes); i++ {
