@@ -214,8 +214,14 @@ func PrintProgramme(psi structure.ProgrammeStatusInfos) {
 		} else {
 			PiExploration = aurora.Red("NOK").String()
 		}
+		PiTeam := ""
+		if psi.BlueTeam {
+			PiTeam = aurora.Blue("BLUE").String()
+		} else {
+			PiTeam = aurora.Red("RED").String()
+		}
 		// Infos programme
-		var PiHeader = []string{"Name", "Status", "Exploration", "Navigation", "Destination", "Temp arriver"}
+		var PiHeader = []string{"Name", "Status", "Exploration", "Navigation", "Destination", "Temp arriver", "TEAM"}
 		var PiData [][]string
 
 		var timeDiff time.Duration
@@ -230,6 +236,7 @@ func PrintProgramme(psi structure.ProgrammeStatusInfos) {
 			PiNagivation,
 			fmt.Sprintf("[ S %d- Z %d ]", psi.Programme.NextPosition.SecteurID, psi.Programme.NextPosition.ZoneID),
 			aurora.Yellow(timeDiff.String()).String(),
+			PiTeam,
 		})
 		PrintColorTable(PiHeader, PiData)
 		PrintColorTable(header, dataList)

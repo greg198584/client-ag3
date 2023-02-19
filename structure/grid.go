@@ -30,6 +30,7 @@ type ZonesGrid struct {
 type ProgrammeStatusInfos struct {
 	Programme             Programme            `json:"programme"`
 	LockProgramme         map[string]Programme `json:"lock_programme"`
+	BlueTeam              bool                 `json:"blue_team"`
 	Navigation            bool                 `json:"navigation"`
 	NavigationTimeArrived time.Time            `json:"navigation_time_arrived"`
 }
@@ -68,7 +69,6 @@ type CelluleInfos struct {
 }
 type Programme struct {
 	ID           string           `json:"id"`
-	BlueTeam     bool             `json:"blue_team"`
 	Name         string           `json:"name"`
 	Position     Position         `json:"position"`
 	NextPosition Position         `json:"last_position"`

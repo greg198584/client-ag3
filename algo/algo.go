@@ -30,7 +30,11 @@ type Algo struct {
 	StatusCode int
 }
 
-func _LoadProgramme(name string, apiteam string) (psi structure.ProgrammeStatusInfos, pc structure.ProgrammeContainer, err error) {
+func _LoadProgramme(name string) (pc structure.ProgrammeContainer, err error) {
+	pc, err = _GetProgrammeFile(name)
+	return
+}
+func _LoadProgrammeBlueTeam(name string, apiteam string) (psi structure.ProgrammeStatusInfos, pc structure.ProgrammeContainer, err error) {
 	pc, err = _GetProgrammeFile(name)
 	if pc.ID == "" || err != nil {
 		//tools.Fail(fmt.Sprintf("no content [%s][%v]", name, pc))
@@ -47,7 +51,7 @@ func _LoadProgramme(name string, apiteam string) (psi structure.ProgrammeStatusI
 		json.NewEncoder(reqBodyBytes).Encode(pc)
 		res, statusCode, _ := api.RequestApi(
 			"POST",
-			fmt.Sprintf("%s/%s", url, api.ROUTE_LOAD_PROGRAMME),
+			fmt.Sprintf("%s/%s", url, api.ROUTE_LOAD_PROGRAMME_BLUE_TEAM),
 			reqBodyBytes.Bytes(),
 		)
 		if statusCode == http.StatusCreated || statusCode == http.StatusOK {
@@ -109,7 +113,28 @@ func _GetProgrammeFile(name string) (pc structure.ProgrammeContainer, err error)
 }
 func NewAlgo(name string, apiteam string) (algo *Algo, err error) {
 	tools.Title(fmt.Sprintf("chargement programme [%s]", name))
-	psi, pc, err := _LoadProgramme(name, apiteam)
+	pc, err := _LoadProgramme(name)
+	algo = &Algo{
+		Name: name,
+		Pc:   pc,
+	}
+	if apiteam == "a" {
+		algo.ApiUrl = api.API_URL_A
+	} else {
+		algo.ApiUrl = api.API_URL_B
+	}
+	if algo.Pc.ID == "" {
+		if ok, _ := algo.GetInfosProgramme(); !ok {
+			err = errors.New("erreur get infos programme")
+			return
+		}
+	}
+	algo.ID = algo.Psi.Programme.ID
+	return algo, err
+}
+func NewAlgoBlueTeam(name string, apiteam string) (algo *Algo, err error) {
+	tools.Title(fmt.Sprintf("chargement programme [%s]", name))
+	psi, pc, err := _LoadProgrammeBlueTeam(name, apiteam)
 	algo = &Algo{
 		Name:   name,
 		Psi:    psi,
@@ -186,6 +211,20 @@ func (a *Algo) Move(secteurID string, zoneID string) (ok bool, err error) {
 	res, statusCode, err := api.RequestApi(
 		"GET",
 		fmt.Sprintf("%s/%s/%s/%s/%s/%s", a.ApiUrl, api.ROUTE_MOVE_PROGRAMME, a.Pc.ID, a.Pc.SecretID, secteurID, zoneID),
+		nil,
+	)
+	if err != nil || statusCode != http.StatusOK {
+		return false, err
+	}
+	a.Psi = structure.ProgrammeStatusInfos{}
+	err = json.Unmarshal(res, &a.Psi)
+	return true, err
+}
+func (a *Algo) QuickMove(secteurID string, zoneID string) (ok bool, err error) {
+	tools.Title(fmt.Sprintf("Programme [%s] Move to S%s-Z%s", a.Name, secteurID, zoneID))
+	res, statusCode, err := api.RequestApi(
+		"GET",
+		fmt.Sprintf("%s/%s/%s/%s/%s/%s", a.ApiUrl, api.ROUTE_QUICK_MOVE_PROGRAMME, a.Pc.ID, a.Pc.SecretID, secteurID, zoneID),
 		nil,
 	)
 	if err != nil || statusCode != http.StatusOK {

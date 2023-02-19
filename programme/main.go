@@ -69,11 +69,20 @@ func Info(pc *structure.ProgrammeContainer) {
 	jsonPretty, _ := tools.PrettyString(reqBodyBytes.Bytes())
 	fmt.Println(jsonPretty)
 }
-func Load(name string, apiteam string) {
+func Load(name string, apiteam string, team string) {
+	var err error
+	var current *algo.Algo
 	tools.Title(fmt.Sprintf("chargement programme [%s]", name))
-	current, err := algo.NewAlgo(name, apiteam)
-	if err != nil {
-		//panic(err)
+	if team == "blue" {
+		current, err = algo.NewAlgoBlueTeam(name, apiteam)
+		if err != nil {
+			tools.Fail(err.Error())
+		}
+	} else {
+		current, err = algo.NewAlgo(name, apiteam)
+		if err != nil {
+			tools.Fail(err.Error())
+		}
 	}
 	current.PrintInfo(true)
 }

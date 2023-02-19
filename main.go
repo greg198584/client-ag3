@@ -24,9 +24,10 @@ func main() {
 		var (
 			pname   = cmd.StringOpt("n name", "", "nom du programme")
 			apiteam = cmd.StringOpt("a api", "", "api a or b")
+			team    = cmd.StringOpt("t team", "", "blue or red")
 		)
 		cmd.Action = func() {
-			programme.Load(*pname, *apiteam)
+			programme.Load(*pname, *apiteam, *team)
 		}
 	})
 	app.Command("disconnect", "deconnecter un programme de la grille", func(cmd *mowcli.Cmd) {
