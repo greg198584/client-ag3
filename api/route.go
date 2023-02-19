@@ -27,6 +27,6 @@ const (
 	ROUTE_EXPLORATION_PROGRAMME_STOP = "v1/programme/exploration/stop"
 	ROUTE_STOP_MOVE_PROGRAMME        = "v1/programme/stop/move"
 	ROUTE_ESTIMATE_MOVE_PROGRAMME    = "v1/programme/estimate/move"
-	ROUTE_ZONE_SHELLCODE             = "v1/zone/shellcode/:id/:secretid"
-	ROUTE_ACTIVE_SHELLCODE           = "v1/active/shellcode/:id/:secretid/:target_id/:shellcode"
+	ROUTE_ZONE_SHELLCODE             = "v1/zone/shellcode"
+	ROUTE_ACTIVE_SHELLCODE           = "v1/active/shellcode"
 )

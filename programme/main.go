@@ -424,7 +424,6 @@ func ShellCode(name string, apiteam string) {
 	if ok {
 		tools.PrintShellCodeData(data)
 	}
-	current.PrintInfo(true)
 }
 func ActiveShellCode(name string, apiteam string, targetID string, ShellCode string) {
 	current, err := algo.NewAlgo(name, apiteam)
@@ -432,5 +431,4 @@ func ActiveShellCode(name string, apiteam string, targetID string, ShellCode str
 		//panic(err)
 	}
 	current.ActiveShellCode(targetID, ShellCode)
-	current.PrintInfo(true)
 }

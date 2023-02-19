@@ -563,7 +563,7 @@ func (a *Algo) ShellCode() (ok bool, data []structure.ShellcodeData, err error) 
 		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
 	} else {
 		if err != nil || statusCode != http.StatusOK {
-			tools.Fail(err.Error())
+			tools.Fail("erreur")
 			return false, data, err
 		}
 		err = json.Unmarshal(res, &data)
