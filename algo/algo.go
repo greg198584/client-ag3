@@ -114,22 +114,27 @@ func _GetProgrammeFile(name string) (pc structure.ProgrammeContainer, err error)
 func NewAlgo(name string, apiteam string) (algo *Algo, err error) {
 	tools.Title(fmt.Sprintf("chargement programme [%s]", name))
 	pc, err := _LoadProgramme(name)
-	algo = &Algo{
-		Name: name,
-		Pc:   pc,
-	}
-	if apiteam == "a" {
-		algo.ApiUrl = api.API_URL_A
+	if err != nil {
+		return
 	} else {
-		algo.ApiUrl = api.API_URL_B
-	}
-	if algo.Pc.ID == "" {
-		if ok, _ := algo.GetInfosProgramme(); !ok {
-			err = errors.New("erreur get infos programme")
-			return
+		tools.Info(fmt.Sprintf("pc id = [%s]", pc.ID))
+		algo = &Algo{
+			Name: name,
+			Pc:   pc,
 		}
+		if apiteam == "a" {
+			algo.ApiUrl = api.API_URL_A
+		} else {
+			algo.ApiUrl = api.API_URL_B
+		}
+		if algo.Pc.ID == "" {
+			if ok, _ := algo.GetInfosProgramme(); !ok {
+				err = errors.New("erreur get infos programme")
+				return
+			}
+		}
+		algo.ID = algo.Psi.Programme.ID
 	}
-	algo.ID = algo.Psi.Programme.ID
 	return algo, err
 }
 func NewAlgoBlueTeam(name string, apiteam string) (algo *Algo, err error) {
@@ -149,6 +154,22 @@ func NewAlgoBlueTeam(name string, apiteam string) (algo *Algo, err error) {
 	}
 	algo.ID = algo.Psi.Programme.ID
 	return algo, err
+}
+func (a *Algo) LoadProgramme() (ok bool, err error) {
+	reqBodyBytes := new(bytes.Buffer)
+	json.NewEncoder(reqBodyBytes).Encode(a.Pc)
+	res, statusCode, _ := api.RequestApi(
+		"POST",
+		fmt.Sprintf("%s/%s", a.ApiUrl, api.ROUTE_LOAD_PROGRAMME),
+		reqBodyBytes.Bytes(),
+	)
+	if statusCode == http.StatusCreated || statusCode == http.StatusOK {
+		_ = json.Unmarshal(res, a.Psi)
+		return true, err
+	} else {
+		err = errors.New("erreur chargement programme")
+	}
+	return false, err
 }
 func (a *Algo) GetInfosProgramme() (ok bool, err error) {
 	//tools.Title(fmt.Sprintf("infos programme [%s]", a.Name))

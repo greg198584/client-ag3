@@ -80,6 +80,8 @@ func Load(name string, apiteam string, team string) {
 		}
 	} else {
 		current, err = algo.NewAlgo(name, apiteam)
+		current.LoadProgramme()
+		current.GetInfosProgramme()
 		if err != nil {
 			tools.Fail(err.Error())
 		}

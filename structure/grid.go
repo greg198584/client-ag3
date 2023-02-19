@@ -35,11 +35,12 @@ type ProgrammeStatusInfos struct {
 	NavigationTimeArrived time.Time            `json:"navigation_time_arrived"`
 }
 type ZoneInfos struct {
-	ID         int              `json:"id"`
-	Actif      bool             `json:"actif"`
-	Cellules   []CelluleInfos   `json:"cellule"`
-	Programmes []ProgrammeInfos `json:"programmes"`
-	Status     bool             `json:"status"`
+	ID             int              `json:"id"`
+	Actif          bool             `json:"actif"`
+	Cellules       []CelluleInfos   `json:"cellule"`
+	Programmes     []ProgrammeInfos `json:"programmes"`
+	Status         bool             `json:"status"`
+	ShellCodeLimit int              `json:"shellcode_limit"`
 }
 type InstructionPassword struct {
 	Len    int    `json:"len"`
@@ -119,4 +120,9 @@ type MoveEstimateData struct {
 	TempEstimate  string `json:"temp_estimate"`
 	CoutEnergy    int    `json:"cout_energy"`
 	CoutIteration int    `json:"cout_iteration"`
+}
+type ShellcodeData struct {
+	PID       string `json:"pid"`
+	Shellcode string `json:"shellcode"`
+	BlueTeam  bool   `json:"blue_team"`
 }
