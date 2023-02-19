@@ -214,19 +214,6 @@ func (a *Algo) ExplorationStop() (ok bool, err error) {
 	err = json.Unmarshal(res, &a.Psi)
 	return true, err
 }
-func (a *Algo) Delete() (ok bool, err error) {
-	tools.Title(fmt.Sprintf("suppression programme [%s]", a.Name))
-	_, statusCode, err := api.RequestApi(
-		"GET",
-		fmt.Sprintf("%s/%s/%s/%s", a.ApiUrl, api.ROUTE_UNSET_PROGRAMME, a.Pc.ID, a.Pc.SecretID),
-		nil,
-	)
-	a.StatusCode = statusCode
-	if err != nil || statusCode != http.StatusOK {
-		return false, err
-	}
-	return true, err
-}
 func (a *Algo) Move(secteurID string, zoneID string) (ok bool, err error) {
 	tools.Title(fmt.Sprintf("Programme [%s] Move to S%s-Z%s", a.Name, secteurID, zoneID))
 	res, statusCode, err := api.RequestApi(
@@ -364,22 +351,6 @@ func (a *Algo) GetStatusGrid() (err error) {
 		err = json.Unmarshal(res, &a.InfosGrid)
 	}
 	return
-}
-func (a *Algo) Unset() {
-	_, statusCode, err := api.RequestApi(
-		"GET",
-		fmt.Sprintf("%s/%s/%s/%s", a.ApiUrl, api.ROUTE_UNSET_PROGRAMME, a.Pc.ID, a.Pc.SecretID),
-		nil,
-	)
-	if err != nil {
-		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
-	} else {
-		if statusCode != http.StatusOK {
-			tools.Fail("deconnexion de la grille NOK")
-		} else {
-			tools.Success("deconnexion de la grille OK")
-		}
-	}
 }
 func (a *Algo) PrintInfo(printGrid bool) {
 	a.GetStatusGrid()
@@ -578,6 +549,42 @@ func (a *Algo) PushFlag() (ok bool, err error) {
 		err = json.Unmarshal(res, &a.Pc)
 		tools.CreateJsonFile(fmt.Sprintf("%s.json", a.Name), a.Pc)
 		tools.Success("backup OK")
+		ok = true
+	}
+	return
+}
+func (a *Algo) ShellCode() (ok bool, data []structure.ShellcodeData, err error) {
+	res, statusCode, err := api.RequestApi(
+		"GET",
+		fmt.Sprintf("%s/%s/%s/%s", a.ApiUrl, api.ROUTE_ZONE_SHELLCODE, a.Pc.ID, a.Pc.SecretID),
+		nil,
+	)
+	if err != nil {
+		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
+	} else {
+		if err != nil || statusCode != http.StatusOK {
+			tools.Fail(err.Error())
+			return false, data, err
+		}
+		err = json.Unmarshal(res, &data)
+		ok = true
+	}
+	return
+}
+func (a *Algo) ActiveShellCode(targetID string, shellcode string) (ok bool, err error) {
+	_, statusCode, err := api.RequestApi(
+		"GET",
+		fmt.Sprintf("%s/%s/%s/%s/%s/%s", a.ApiUrl, api.ROUTE_ACTIVE_SHELLCODE, a.Pc.ID, a.Pc.SecretID, targetID, shellcode),
+		nil,
+	)
+	if err != nil {
+		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
+	} else {
+		if err != nil || statusCode != http.StatusOK {
+			tools.Fail("backup FAIL")
+			return false, err
+		}
+		tools.Success("OK")
 		ok = true
 	}
 	return

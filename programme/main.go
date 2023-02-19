@@ -88,14 +88,6 @@ func Load(name string, apiteam string, team string) {
 	}
 	current.PrintInfo(true)
 }
-func Delete(name string, apiteam string) {
-	tools.Title(fmt.Sprintf("suppression programme [%s]", name))
-	current, err := algo.NewAlgo(name, apiteam)
-	if err != nil {
-		//panic(err)
-	}
-	current.Unset()
-}
 func Scan(name string, apiteam string) {
 	tools.Title(fmt.Sprintf("Programme [%s] scan", name))
 	current, err := algo.NewAlgo(name, apiteam)
@@ -421,5 +413,24 @@ func StopMove(name string, apiteam string) {
 		//panic(err)
 	}
 	current.StopMove()
+	current.PrintInfo(true)
+}
+func ShellCode(name string, apiteam string) {
+	current, err := algo.NewAlgo(name, apiteam)
+	if err != nil {
+		//panic(err)
+	}
+	ok, data, _ := current.ShellCode()
+	if ok {
+		tools.PrintShellCodeData(data)
+	}
+	current.PrintInfo(true)
+}
+func ActiveShellCode(name string, apiteam string, targetID string, ShellCode string) {
+	current, err := algo.NewAlgo(name, apiteam)
+	if err != nil {
+		//panic(err)
+	}
+	current.ActiveShellCode(targetID, ShellCode)
 	current.PrintInfo(true)
 }

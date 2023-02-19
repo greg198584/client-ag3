@@ -250,6 +250,26 @@ func main() {
 			programme.DestroyZone(*pname, *apiteam, celluleIDint, energyint, *allCellule)
 		}
 	})
+	app.Command("shellcode", "generate shellcode sur programmme present sur zone", func(cmd *mowcli.Cmd) {
+		var (
+			pname   = cmd.StringOpt("n name", "", "nom du programme")
+			apiteam = cmd.StringOpt("a api", "", "api a or b")
+		)
+		cmd.Action = func() {
+			programme.ShellCode(*pname, *apiteam)
+		}
+	})
+	app.Command("destroy", "destroy cellule programme", func(cmd *mowcli.Cmd) {
+		var (
+			pname     = cmd.StringOpt("n name", "", "nom du programme")
+			apiteam   = cmd.StringOpt("a api", "", "api a or b")
+			targetID  = cmd.StringOpt("t target", "", "ID programme cible")
+			ShellCode = cmd.StringOpt("s", "", "shellcode")
+		)
+		cmd.Action = func() {
+			programme.ActiveShellCode(*pname, *apiteam, *targetID, *ShellCode)
+		}
+	})
 	app.Action = func() {
 		app.PrintHelp()
 	}

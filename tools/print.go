@@ -449,3 +449,25 @@ func PrintZoneActif(Zones []structure.ZonesGrid) {
 	}
 	return
 }
+func PrintShellCodeData(datas []structure.ShellcodeData) {
+	var header = []string{"PID", "shellcode", "TEAM"}
+	var dataList [][]string
+
+	for _, data := range datas {
+		team := ""
+		if data.BlueTeam {
+			team = aurora.Blue("BLUE").String()
+		} else {
+			team = aurora.Red("RED").String()
+		}
+		dataList = append(dataList, []string{
+			data.PID,
+			data.Shellcode,
+			team,
+		})
+	}
+	if len(dataList) > 0 {
+		PrintColorTable(header, dataList, "shellcode generer")
+	}
+	return
+}
