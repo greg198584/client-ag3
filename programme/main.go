@@ -391,7 +391,7 @@ func QuickMovePosition(name string, apiteam string, secteurID string, zoneID str
 	if err != nil {
 		//panic(err)
 	}
-	current.Move(secteurID, zoneID)
+	current.QuickMove(secteurID, zoneID)
 	current.PrintInfo(true)
 }
 func EstimateMove(name string, apiteam string, secteurID string, zoneID string) {
