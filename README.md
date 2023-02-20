@@ -91,6 +91,8 @@ Commands:
   destroy_zone       destroy cellule zone current
   shellcode          generate shellcode sur programmme present sur zone
   active_shellcode   activer un shellcode sur un programme
+  acf                [blueteam] activer capture flag sur zone de transfert
+
                      
 Run 'main COMMAND --help' for more information on a command.
 ```
@@ -214,3 +216,131 @@ Run 'main COMMAND --help' for more information on a command.
   }
 ]
 ```
+
+### create programme
+
+```
+> $ ./client-ag3 create -a a -n robin                                                                                                                                                                                                           [±master ●●]
+2023/02/20 12:47:03 [création programme [robin]]
+2023/02/20 12:47:04 [LOG] [< request api status [201] [GET http://195.154.84.18:20180/v1/programme/new/robin] >] ()
+2023/02/20 12:47:04 [+] [programme ajouter ID = [8f7b7bdcc4e9bf57a0ae89d99a40dfa4083f36ec]] [OK]
+2023/02/20 12:47:04 [>>>] [programme info]
+```
+
+- Ceci crée l'instance de votre programme - JSON fourni en retour de l'API (à conserver)
+
+```
+{
+ "id": "8f7b7bdcc4e9bf57a0ae89d99a40dfa4083f36ec",
+ "secret_id": "a257d9da133edb1f19d166bbfc66b60fa82bfa39",
+ "programme": {
+  "id": "8f7b7bdcc4e9bf57a0ae89d99a40dfa4083f36ec",
+  "name": "robin",
+  "position": {
+   "secteur_id": 0,
+   "zone_id": 0
+  },
+  "last_position": {
+   "secteur_id": 0,
+   "zone_id": 0
+  },
+  "cellules": {
+   "0": {
+    "id": 0,
+    "valeur": 100,
+    "energy": 100,
+    "datas": {},
+    "status": true,
+    "destroy": true,
+    "rebuild": true,
+    "current_acces_log": {
+     "pid": "",
+     "target_id": "",
+     "receive_destroy": false,
+     "active_destroy": false,
+     "active_rebuild": false,
+     "active_capture": false,
+     "c_time": "0001-01-01T00:00:00Z"
+    },
+    "acces_log": {},
+    "capture": false,
+    "trapped": false,
+    "exploration": false
+   },
+   "1": {
+    "id": 1,
+    "valeur": 100,
+    "energy": 100,
+    "datas": {},
+    "status": true,
+    "destroy": true,
+    "rebuild": true,
+    "current_acces_log": {
+     "pid": "",
+     "target_id": "",
+     "receive_destroy": false,
+     "active_destroy": false,
+     "active_rebuild": false,
+     "active_capture": false,
+     "c_time": "0001-01-01T00:00:00Z"
+    },
+    "acces_log": {},
+    "capture": false,
+    "trapped": false,
+    "exploration": false
+   },
+   "2": {
+    "id": 2,
+    "valeur": 100,
+    "energy": 100,
+    "datas": {},
+    "status": true,
+    "destroy": true,
+    "rebuild": true,
+    "current_acces_log": {
+     "pid": "",
+     "target_id": "",
+     "receive_destroy": false,
+     "active_destroy": false,
+     "active_rebuild": false,
+     "active_capture": false,
+     "c_time": "0001-01-01T00:00:00Z"
+    },
+    "acces_log": {},
+    "capture": false,
+    "trapped": false,
+    "exploration": false
+   },
+   "3": {
+    "id": 3,
+    "valeur": 100,
+    "energy": 100,
+    "datas": {},
+    "status": true,
+    "destroy": true,
+    "rebuild": true,
+    "current_acces_log": {
+     "pid": "",
+     "target_id": "",
+     "receive_destroy": false,
+     "active_destroy": false,
+     "active_rebuild": false,
+     "active_capture": false,
+     "c_time": "0001-01-01T00:00:00Z"
+    },
+    "acces_log": {},
+    "capture": false,
+    "trapped": false,
+    "exploration": false
+   }
+  },
+  "level": 1,
+  "grid_flags": null,
+  "status": true,
+  "exploration": false
+ },
+ "valid_key": "$argon2id$v=19$m=65536,t=1,p=2$wVFaZbl2d1N+d8mT1zQzcg$yHCGE7Y6Y9d/HAxLqB8XXfIKyPuiCyoj0+voIgjfLDc"
+}
+```
+
+- Après create ou load ( RED OU BLUE) utiliser votre ID et secret ID pour utiliser les routes de l'API

@@ -270,6 +270,16 @@ func main() {
 			programme.ActiveShellCode(*pname, *apiteam, *targetID, *ShellCode)
 		}
 	})
+	app.Command("acf", "[blueteam] activer capture flag sur zone de transfert", func(cmd *mowcli.Cmd) {
+		var (
+			pname   = cmd.StringOpt("n name", "", "nom du programme")
+			apiteam = cmd.StringOpt("a api", "", "api a or b")
+			Flag    = cmd.StringOpt("f", "", "flag")
+		)
+		cmd.Action = func() {
+			programme.ActiveCaptureFlag(*pname, *apiteam, *Flag)
+		}
+	})
 	app.Action = func() {
 		app.PrintHelp()
 	}

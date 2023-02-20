@@ -589,3 +589,21 @@ func (a *Algo) ActiveShellCode(targetID string, shellcode string) (ok bool, err 
 	}
 	return
 }
+func (a *Algo) ActiveCaptureFlag(Flag string) (ok bool, err error) {
+	_, statusCode, err := api.RequestApi(
+		"GET",
+		fmt.Sprintf("%s/%s/%s/%s/%s", a.ApiUrl, api.ROUTE_ACTIVE_CAPTURE_FLAG, a.Pc.ID, a.Pc.SecretID, Flag),
+		nil,
+	)
+	if err != nil {
+		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
+	} else {
+		if err != nil || statusCode != http.StatusOK {
+			tools.Fail("backup FAIL")
+			return false, err
+		}
+		tools.Success("OK")
+		ok = true
+	}
+	return
+}

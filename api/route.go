@@ -29,4 +29,5 @@ const (
 	ROUTE_ESTIMATE_MOVE_PROGRAMME    = "v1/programme/estimate/move"
 	ROUTE_ZONE_SHELLCODE             = "v1/zone/shellcode"
 	ROUTE_ACTIVE_SHELLCODE           = "v1/active/shellcode"
+	ROUTE_ACTIVE_CAPTURE_FLAG        = "v1/active/capture/flag"
 )

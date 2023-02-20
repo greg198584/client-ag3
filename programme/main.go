@@ -428,7 +428,16 @@ func ShellCode(name string, apiteam string) {
 func ActiveShellCode(name string, apiteam string, targetID string, ShellCode string) {
 	current, err := algo.NewAlgo(name, apiteam)
 	if err != nil {
-		//panic(err)
+		tools.Fail(err.Error())
+	} else {
+		current.ActiveShellCode(targetID, ShellCode)
 	}
-	current.ActiveShellCode(targetID, ShellCode)
+}
+func ActiveCaptureFlag(name string, apiteam string, Flag string) {
+	current, err := algo.NewAlgo(name, apiteam)
+	if err != nil {
+		tools.Fail(err.Error())
+	} else {
+		current.ActiveCaptureFlag(Flag)
+	}
 }
