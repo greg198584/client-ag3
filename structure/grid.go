@@ -10,6 +10,7 @@ type ProgrammeContainer struct {
 }
 type GridInfos struct {
 	Id            string      `json:"id"`
+	Ag3Team       string      `json:"ag-3-team"`
 	Taille        int         `json:"taille"`
 	ZoneTransfert Position    `json:"zone_transfert"`
 	Iteration     int         `json:"iteration"`

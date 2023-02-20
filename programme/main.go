@@ -77,6 +77,7 @@ func Load(name string, apiteam string, team string) {
 		current, err = algo.NewAlgoBlueTeam(name, apiteam)
 		if err != nil {
 			tools.Fail(err.Error())
+			return
 		}
 	} else {
 		current, err = algo.NewAlgo(name, apiteam)
@@ -84,6 +85,7 @@ func Load(name string, apiteam string, team string) {
 		current.GetInfosProgramme()
 		if err != nil {
 			tools.Fail(err.Error())
+			return
 		}
 	}
 	current.PrintInfo(true)

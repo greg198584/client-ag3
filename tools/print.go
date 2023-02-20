@@ -221,7 +221,7 @@ func PrintProgramme(psi structure.ProgrammeStatusInfos) {
 			PiTeam = aurora.Red("RED").String()
 		}
 		// Infos programme
-		var PiHeader = []string{"Name", "Status", "Exploration", "Navigation", "Destination", "Temp arriver", "TEAM"}
+		var PiHeader = []string{"Name", "Status", "Exploration", "Navigation", "Destination", "Temp arriver", "TEAM", "Competence"}
 		var PiData [][]string
 
 		var timeDiff time.Duration
@@ -229,6 +229,7 @@ func PrintProgramme(psi structure.ProgrammeStatusInfos) {
 			timeNow := time.Now()
 			timeDiff = timeNow.Sub(psi.NavigationTimeArrived)
 		}
+		competenceNbr := GetNombreCompetence(psi.Programme.Cellules)
 		PiData = append(PiData, []string{
 			aurora.Cyan(psi.Programme.Name).String(),
 			PiStatus,
@@ -237,6 +238,7 @@ func PrintProgramme(psi structure.ProgrammeStatusInfos) {
 			fmt.Sprintf("[ S %d- Z %d ]", psi.Programme.NextPosition.SecteurID, psi.Programme.NextPosition.ZoneID),
 			aurora.Yellow(timeDiff.String()).String(),
 			PiTeam,
+			fmt.Sprintf("%d", competenceNbr),
 		})
 		PrintColorTable(PiHeader, PiData)
 		PrintColorTable(header, dataList)
@@ -255,6 +257,17 @@ func PrintProgramme(psi structure.ProgrammeStatusInfos) {
 		fmt.Printf("<---[ %s - [%s] ]--->\n", aurora.Green("FLAG CAPTURER"), aurora.Cyan(flag))
 	}
 	return
+}
+func GetNombreCompetence(cellules map[int]*structure.Cellule) (nbr int) {
+	nbr = 0
+	for _, cellule := range cellules {
+		for _, data := range cellule.Datas {
+			if data.Competence {
+				nbr++
+			}
+		}
+	}
+	return nbr
 }
 
 /*func PrintGridPosition(programme structure.Programme, size int) {
@@ -300,7 +313,7 @@ func PrintGridPosition(programme structure.Programme, size int) {
 	))
 }
 func PrintInfosGrille(infos structure.GridInfos) {
-	var header = []string{"ID", "Taille", "ZoneTransfert", "Iteration", "Cycle", "NbrProgramme", "status", "Version", "FlagCapture"}
+	var header = []string{"ID", "NAME", "Taille", "ZoneTransfert", "Iteration", "Cycle", "NbrProgramme", "status", "Version", "FlagCapture"}
 	var InfosTab [][]string
 
 	flagCapture := aurora.Red("FALSE")
@@ -313,6 +326,7 @@ func PrintInfosGrille(infos structure.GridInfos) {
 	}
 	InfosTab = append(InfosTab, []string{
 		infos.Id,
+		infos.Ag3Team,
 		strconv.FormatInt(int64(infos.Taille), 10),
 		fmt.Sprintf("S%d-Z%d", infos.ZoneTransfert.SecteurID, infos.ZoneTransfert.ZoneID),
 		strconv.FormatInt(int64(infos.Iteration), 10),
