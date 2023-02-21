@@ -1,10 +1,10 @@
 package api
 
 const (
-	//API_URL_A                        = "http://localhost:20180"
-	//API_URL_B                        = "http://localhost:20190"
-	API_URL_A                        = "http://195.154.84.18:20180"
-	API_URL_B                        = "http://195.154.84.18:20190"
+	API_URL_A = "http://localhost:20180"
+	API_URL_B = "http://localhost:20190"
+	//API_URL_A                        = "http://195.154.84.18:20180"
+	//API_URL_B                        = "http://195.154.84.18:20190"
 	ROUTE_NEW_PROGRAMME              = "v1/programme/new"
 	ROUTE_LOAD_PROGRAMME             = "v1/programme/load"
 	ROUTE_LOAD_PROGRAMME_BLUE_TEAM   = "v1/programme/load/blue/team"
