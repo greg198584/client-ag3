@@ -146,6 +146,11 @@ func NewAlgoBlueTeam(name string, apiteam string) (algo *Algo, err error) {
 		Pc:     pc,
 		ApiUrl: apiteam,
 	}
+	if apiteam == "a" {
+		algo.ApiUrl = api.API_URL_A
+	} else {
+		algo.ApiUrl = api.API_URL_B
+	}
 	if algo.Psi.Programme.ID == "" {
 		if ok, _ := algo.GetInfosProgramme(); !ok {
 			err = errors.New("erreur get infos programme")
@@ -338,7 +343,6 @@ func (a *Algo) Rebuild(celluleID int, targetID string, energy int) (ok bool, res
 	return true, res, err
 }
 func (a *Algo) GetStatusGrid() (err error) {
-	//tools.Title(fmt.Sprintf("Status grid"))
 	res, statusCode, err := api.RequestApi(
 		"GET",
 		fmt.Sprintf("%s/%s", a.ApiUrl, api.ROUTE_STATUS_GRID),
@@ -353,7 +357,10 @@ func (a *Algo) GetStatusGrid() (err error) {
 	return
 }
 func (a *Algo) PrintInfo(printGrid bool) {
-	a.GetStatusGrid()
+	err := a.GetStatusGrid()
+	if err != nil {
+		tools.Fail(err.Error())
+	}
 	tools.PrintProgramme(a.Psi)
 	tools.PrintInfosGrille(a.InfosGrid)
 	if printGrid {
