@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/greg198584/client-ag3/algo"
 	"github.com/greg198584/client-ag3/api"
+	"github.com/greg198584/client-ag3/cia_engine"
 	"github.com/greg198584/client-ag3/structure"
 	"github.com/greg198584/client-ag3/tools"
 	"net/http"
@@ -441,5 +442,16 @@ func ActiveCaptureFlag(name string, apiteam string, Flag string) {
 		tools.Fail(err.Error())
 	} else {
 		current.ActiveCaptureFlag(Flag)
+	}
+}
+func RunCIA(name string) {
+	current, err := cia_engine.New(name)
+	if err != nil {
+		tools.Fail(err.Error())
+	} else {
+		err = current.Run()
+		if err != nil {
+			tools.Fail(err.Error())
+		}
 	}
 }
