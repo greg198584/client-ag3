@@ -1,6 +1,7 @@
 package cia_engine
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/greg198584/client-ag3/algo"
@@ -82,5 +83,24 @@ func (cia *CiaEngine) Run() (err error) {
 		return
 	}
 	tools.PrintInfosGrille(current.InfosGrid)
+	reqBodyBytes := new(bytes.Buffer)
+	json.NewEncoder(reqBodyBytes).Encode(cia)
+	jsonPretty, _ := tools.PrettyString(reqBodyBytes.Bytes())
+	fmt.Println(jsonPretty)
+	for _, zone := range current.InfosGrid.Zones {
+		if zone.Status {
+			tools.Title(fmt.Sprintf("Zone [%d][%d]", zone.SecteurID, zone.ZoneID))
+			count := len(cia.LoopCIA.LoopCode)
+			for i := 0; i < count; i++ {
+				ciaCode := cia.LoopCIA.LoopCode[i]
+				tools.Info(fmt.Sprintf(
+					"\tcommande [%s] - instruction [%s] - action [%s]",
+					ciaCode.Commande,
+					ciaCode.Instruction,
+					ciaCode.Action,
+				))
+			}
+		}
+	}
 	return
 }
