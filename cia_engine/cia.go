@@ -3,6 +3,7 @@ package cia_engine
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/greg198584/client-ag3/algo"
 	"github.com/greg198584/client-ag3/tools"
 )
 
@@ -65,5 +66,21 @@ func New(name string) (cia *CiaEngine, err error) {
 
 func (cia *CiaEngine) Run() (err error) {
 	tools.Info(fmt.Sprintf("Run script [%s] - programme [%s]", cia.ScriptName, cia.ProgrammeName))
+	var current *algo.Algo
+	if cia.Api.TeamBlue {
+		current, err = algo.NewAlgoBlueTeam(cia.ProgrammeName, cia.Api.Url)
+	} else {
+		current, err = algo.NewAlgo(cia.ProgrammeName, cia.Api.Url)
+	}
+	if err != nil {
+		tools.Fail(err.Error())
+		return
+	}
+	err = current.GetStatusGrid()
+	if err != nil {
+		tools.Fail(err.Error())
+		return
+	}
+	tools.PrintInfosGrille(current.InfosGrid)
 	return
 }
