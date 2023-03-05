@@ -64,6 +64,14 @@ func New(name string, apiteam string) {
 		tools.Warning(fmt.Sprintf("programme file exist"))
 	}
 }
+func GetApiUrl(apiTeam string) (url string) {
+	if apiTeam == "a" {
+		url = api.API_URL_A
+	} else {
+		url = api.API_URL_B
+	}
+	return
+}
 func Info(pc *structure.ProgrammeContainer) {
 	reqBodyBytes := new(bytes.Buffer)
 	json.NewEncoder(reqBodyBytes).Encode(pc.Programme)
@@ -75,13 +83,13 @@ func Load(name string, apiteam string, team string) {
 	var current *algo.Algo
 	tools.Title(fmt.Sprintf("chargement programme [%s]", name))
 	if team == "blue" {
-		current, err = algo.NewAlgoBlueTeam(name, apiteam)
+		current, err = algo.NewAlgoBlueTeam(name, GetApiUrl(apiteam))
 		if err != nil {
 			tools.Fail(err.Error())
 			return
 		}
 	} else {
-		current, err = algo.NewAlgo(name, apiteam)
+		current, err = algo.NewAlgo(name, GetApiUrl(apiteam))
 		current.LoadProgramme()
 		current.GetInfosProgramme()
 		if err != nil {
@@ -93,7 +101,7 @@ func Load(name string, apiteam string, team string) {
 }
 func Scan(name string, apiteam string) {
 	tools.Title(fmt.Sprintf("Programme [%s] scan", name))
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		//panic(err)
 	}
@@ -112,7 +120,7 @@ func Scan(name string, apiteam string) {
 }
 func Explore(name string, apiteam string, celluleID string) {
 	tools.Title(fmt.Sprintf("Programme [%s] explore cellule [%s]", name, celluleID))
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		//panic(err)
 	}
@@ -138,7 +146,7 @@ func Destroy(name string, apiteam string, celluleID int, targetID string, energy
 		targetID,
 		algo.ENERGY_MAX_ATTACK,
 	))
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		//panic(err)
 	}
@@ -154,7 +162,7 @@ func Rebuild(name string, apiteam string, celluleID int, targetID string, energy
 		targetID,
 		algo.ENERGY_MAX_ATTACK,
 	))
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		//panic(err)
 	}
@@ -164,15 +172,9 @@ func Rebuild(name string, apiteam string, celluleID int, targetID string, energy
 }
 func GetStatusGrid(apiteam string, zoneActif bool) {
 	tools.Title(fmt.Sprintf("Status grid"))
-	url := ""
-	if apiteam == "a" {
-		url = api.API_URL_A
-	} else {
-		url = api.API_URL_B
-	}
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s", url, api.ROUTE_STATUS_GRID),
+		fmt.Sprintf("%s/%s", GetApiUrl(apiteam), api.ROUTE_STATUS_GRID),
 		nil,
 	)
 	if err != nil {
@@ -201,7 +203,7 @@ func GetStatusGrid(apiteam string, zoneActif bool) {
 }
 func GetInfoProgramme(name string, apiteam string, printPosition bool) {
 	tools.Title(fmt.Sprintf("infos programme"))
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		//panic(err)
 	}
@@ -210,7 +212,7 @@ func GetInfoProgramme(name string, apiteam string, printPosition bool) {
 }
 func Navigation(name string, apiteam string) {
 	tools.Title(fmt.Sprintf("stop mode navigation programme"))
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		//panic(err)
 	}
@@ -219,7 +221,7 @@ func Navigation(name string, apiteam string) {
 }
 func ExplorationStop(name string, apiteam string) {
 	tools.Title(fmt.Sprintf("stop exploration"))
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		//panic(err)
 	}
@@ -228,7 +230,7 @@ func ExplorationStop(name string, apiteam string) {
 }
 func CaptureTargetData(name string, apiteam string, celluleID int, targetID string) {
 	tools.Title(fmt.Sprintf("[%s] Capture data target [%s] - cellule [%s]", name, targetID, celluleID))
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		//panic(err)
 	}
@@ -239,7 +241,7 @@ func CaptureTargetData(name string, apiteam string, celluleID int, targetID stri
 func CaptureCellData(name string, apiteam string, celluleID int, index string) {
 	tools.Title(fmt.Sprintf("[%s] Capture data cellule [%d] - index [%d]", name, celluleID, index))
 	index_split := strings.Split(index, "-")
-	current, _ := algo.NewAlgo(name, apiteam)
+	current, _ := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if len(index_split) > 1 {
 		id, _ := strconv.Atoi(index_split[0])
 		count, _ := strconv.Atoi(index_split[1])
@@ -256,7 +258,7 @@ func CaptureCellData(name string, apiteam string, celluleID int, index string) {
 }
 func CaptureTargetEnergy(name string, apiteam string, celluleID int, targetID string) {
 	tools.Title(fmt.Sprintf("[%s] Capture energy target [%s] - cellule [%s]", name, targetID, celluleID))
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		//panic(err)
 	}
@@ -268,7 +270,7 @@ func CaptureCellEnergy(name string, apiteam string, celluleID int, index string)
 	tools.Title(fmt.Sprintf("[%s] Capture energy cellule [%s] - index [%d]", name, celluleID, index))
 	index_split := strings.Split(index, "-")
 	fmt.Printf("index_split = [%v]\n", index_split)
-	current, _ := algo.NewAlgo(name, apiteam)
+	current, _ := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if len(index_split) > 1 {
 		id, _ := strconv.Atoi(index_split[0])
 		count, _ := strconv.Atoi(index_split[1])
@@ -285,7 +287,7 @@ func CaptureCellEnergy(name string, apiteam string, celluleID int, index string)
 }
 func Equilibrium(name string, apiteam string) {
 	tools.Title(fmt.Sprintf("Equilibrium energy programme [%s]", name))
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		//panic(err)
 	}
@@ -294,7 +296,7 @@ func Equilibrium(name string, apiteam string) {
 }
 func PushFlag(name string, apiteam string) {
 	tools.Title(fmt.Sprintf("Push flag - programme [%s]", name))
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		//panic(err)
 	}
@@ -303,7 +305,7 @@ func PushFlag(name string, apiteam string) {
 	current.PrintInfo(false)
 }
 func DestroyZone(name string, apiteam string, celluleID int, energy int, all bool) {
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		//panic(err)
 	}
@@ -323,7 +325,7 @@ func DestroyZone(name string, apiteam string, celluleID int, energy int, all boo
 }
 
 func Monitoring(name string, apiteam string, printGrid bool) {
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		//panic(err)
 	}
@@ -335,7 +337,7 @@ func Monitoring(name string, apiteam string, printGrid bool) {
 }
 func GetCelluleLog(name string, apiteam string, celluleID string) {
 	tools.Title(fmt.Sprintf("GET LOG cellule [%s] - programme [%s]", celluleID, name))
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		//panic(err)
 	}
@@ -359,7 +361,7 @@ func GetCelluleLog(name string, apiteam string, celluleID string) {
 }
 func CleanCelluleLog(name string, apiteam string, celluleID string) {
 	tools.Title(fmt.Sprintf("CLEAN LOG cellule [%s] - programme [%s]", celluleID, name))
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		//panic(err)
 	}
@@ -376,7 +378,7 @@ func CleanCelluleLog(name string, apiteam string, celluleID string) {
 	return
 }
 func MovePosition(name string, apiteam string, secteurID string, zoneID string) {
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		//panic(err)
 	}
@@ -384,7 +386,7 @@ func MovePosition(name string, apiteam string, secteurID string, zoneID string) 
 	current.PrintInfo(true)
 }
 func QuickMovePosition(name string, apiteam string, secteurID string, zoneID string) {
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		//panic(err)
 	}
@@ -392,7 +394,7 @@ func QuickMovePosition(name string, apiteam string, secteurID string, zoneID str
 	current.PrintInfo(true)
 }
 func EstimateMove(name string, apiteam string, secteurID string, zoneID string) {
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		//panic(err)
 	}
@@ -411,7 +413,7 @@ func EstimateMove(name string, apiteam string, secteurID string, zoneID string) 
 	tools.PrintColorTable(header, dataTab, "<---[ Estimation temp de deplacement ]--->")
 }
 func StopMove(name string, apiteam string) {
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		//panic(err)
 	}
@@ -419,7 +421,7 @@ func StopMove(name string, apiteam string) {
 	current.PrintInfo(true)
 }
 func ShellCode(name string, apiteam string) {
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		//panic(err)
 	}
@@ -429,7 +431,7 @@ func ShellCode(name string, apiteam string) {
 	}
 }
 func ActiveShellCode(name string, apiteam string, targetID string, ShellCode string) {
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		tools.Fail(err.Error())
 	} else {
@@ -437,7 +439,7 @@ func ActiveShellCode(name string, apiteam string, targetID string, ShellCode str
 	}
 }
 func ActiveCaptureFlag(name string, apiteam string, Flag string) {
-	current, err := algo.NewAlgo(name, apiteam)
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
 		tools.Fail(err.Error())
 	} else {

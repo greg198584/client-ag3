@@ -34,46 +34,34 @@ func _LoadProgramme(name string) (pc structure.ProgrammeContainer, err error) {
 	pc, err = _GetProgrammeFile(name)
 	return
 }
-func _LoadProgrammeBlueTeam(name string, apiteam string) (psi structure.ProgrammeStatusInfos, pc structure.ProgrammeContainer, err error) {
+func _LoadProgrammeBlueTeam(name string, apiUrl string) (psi structure.ProgrammeStatusInfos, pc structure.ProgrammeContainer, err error) {
 	pc, err = _GetProgrammeFile(name)
 	if pc.ID == "" || err != nil {
 		//tools.Fail(fmt.Sprintf("no content [%s][%v]", name, pc))
-		pc, _ = _CreateProgramme(name, apiteam)
+		pc, _ = _CreateProgramme(name, apiUrl)
 		return
 	} else {
-		url := ""
-		if apiteam == "a" {
-			url = api.API_URL_A
-		} else {
-			url = api.API_URL_B
-		}
 		reqBodyBytes := new(bytes.Buffer)
 		json.NewEncoder(reqBodyBytes).Encode(pc)
 		res, statusCode, _ := api.RequestApi(
 			"POST",
-			fmt.Sprintf("%s/%s", url, api.ROUTE_LOAD_PROGRAMME_BLUE_TEAM),
+			fmt.Sprintf("%s/%s", apiUrl, api.ROUTE_LOAD_PROGRAMME_BLUE_TEAM),
 			reqBodyBytes.Bytes(),
 		)
 		if statusCode == http.StatusCreated || statusCode == http.StatusOK {
 			_ = json.Unmarshal(res, &psi)
 		} else {
-			pc, _ = _CreateProgramme(name, apiteam)
+			pc, _ = _CreateProgramme(name, apiUrl)
 		}
 	}
 	return
 }
-func _CreateProgramme(name string, apiteam string) (programme structure.ProgrammeContainer, err error) {
+func _CreateProgramme(name string, apiUrl string) (programme structure.ProgrammeContainer, err error) {
 	tools.Title(fmt.Sprintf("création programme [%s]", name))
 	if _IsExistFile(name) == false {
-		url := ""
-		if apiteam == "a" {
-			url = api.API_URL_A
-		} else {
-			url = api.API_URL_B
-		}
 		res, statusCode, err := api.RequestApi(
 			"GET",
-			fmt.Sprintf("%s/%s/%s", url, api.ROUTE_NEW_PROGRAMME, name),
+			fmt.Sprintf("%s/%s/%s", apiUrl, api.ROUTE_NEW_PROGRAMME, name),
 			nil,
 		)
 		if err != nil {
@@ -111,7 +99,7 @@ func _GetProgrammeFile(name string) (pc structure.ProgrammeContainer, err error)
 	}
 	return
 }
-func NewAlgo(name string, apiteam string) (algo *Algo, err error) {
+func NewAlgo(name string, apiUrl string) (algo *Algo, err error) {
 	tools.Title(fmt.Sprintf("chargement programme [%s]", name))
 	pc, err := _LoadProgramme(name)
 	if err != nil {
@@ -122,11 +110,7 @@ func NewAlgo(name string, apiteam string) (algo *Algo, err error) {
 			Name: name,
 			Pc:   pc,
 		}
-		if apiteam == "a" {
-			algo.ApiUrl = api.API_URL_A
-		} else {
-			algo.ApiUrl = api.API_URL_B
-		}
+		algo.ApiUrl = apiUrl
 		if algo.Pc.ID == "" {
 			if ok, _ := algo.GetInfosProgramme(); !ok {
 				err = errors.New("erreur get infos programme")
@@ -137,19 +121,14 @@ func NewAlgo(name string, apiteam string) (algo *Algo, err error) {
 	}
 	return algo, err
 }
-func NewAlgoBlueTeam(name string, apiteam string) (algo *Algo, err error) {
+func NewAlgoBlueTeam(name string, apiUrl string) (algo *Algo, err error) {
 	tools.Title(fmt.Sprintf("chargement programme [%s]", name))
-	psi, pc, err := _LoadProgrammeBlueTeam(name, apiteam)
+	psi, pc, err := _LoadProgrammeBlueTeam(name, apiUrl)
 	algo = &Algo{
 		Name:   name,
 		Psi:    psi,
 		Pc:     pc,
-		ApiUrl: apiteam,
-	}
-	if apiteam == "a" {
-		algo.ApiUrl = api.API_URL_A
-	} else {
-		algo.ApiUrl = api.API_URL_B
+		ApiUrl: apiUrl,
 	}
 	if algo.Psi.Programme.ID == "" {
 		if ok, _ := algo.GetInfosProgramme(); !ok {
