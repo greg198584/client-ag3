@@ -176,6 +176,7 @@ func (cia *CiaEngine) Action(action string) (err error) {
 func (cia *CiaEngine) Wait(value string, condition string) (err error) {
 	for {
 		time.Sleep(algo.TIME_MILLISECONDE * time.Millisecond)
+		tools.Success(fmt.Sprintf("+++ waiting [%s] - [%s]", value, condition))
 		if ok, errInfos := cia.Algo.GetInfosProgramme(); !ok {
 			err = errInfos
 			return

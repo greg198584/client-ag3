@@ -3,12 +3,12 @@
   "auto_connect": true,
   "api": {
     "url": "http://localhost:20180",
-    "team_blue": false,
+    "team_blue": true,
     "team_red": false
   },
   "loop_cia": {
     "loop_params": {
-      "stop": true,
+      "stop": false,
       "random": true
     },
     "loop_code": [

@@ -451,9 +451,15 @@ func RunCIA(name string) {
 	if err != nil {
 		tools.Fail(err.Error())
 	} else {
-		err = current.Run()
-		if err != nil {
-			tools.Fail(err.Error())
+		for {
+			err = current.Run()
+			if err != nil {
+				tools.Fail(err.Error())
+			}
+			if current.LoopCIA.LoopParams.Stop {
+				break
+			}
 		}
+		tools.Success("end script")
 	}
 }
