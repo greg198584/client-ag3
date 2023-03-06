@@ -3,9 +3,11 @@ package cia_engine
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/greg198584/client-ag3/algo"
 	"github.com/greg198584/client-ag3/tools"
+	"strings"
 )
 
 type CiaEngine struct {
@@ -74,12 +76,10 @@ func (cia *CiaEngine) Run() (err error) {
 		current, err = algo.NewAlgo(cia.ProgrammeName, cia.Api.Url)
 	}
 	if err != nil {
-		tools.Fail(err.Error())
 		return
 	}
 	err = current.GetStatusGrid()
 	if err != nil {
-		tools.Fail(err.Error())
 		return
 	}
 	tools.PrintInfosGrille(current.InfosGrid)
@@ -87,6 +87,17 @@ func (cia *CiaEngine) Run() (err error) {
 	json.NewEncoder(reqBodyBytes).Encode(cia)
 	jsonPretty, _ := tools.PrettyString(reqBodyBytes.Bytes())
 	fmt.Println(jsonPretty)
+	if cia.AutoConnect {
+		if ok, errLoad := current.LoadProgramme(); !ok {
+			err = errLoad
+			return
+		}
+	} else {
+		if ok, errInfo := current.GetInfosProgramme(); !ok {
+			err = errInfo
+			return
+		}
+	}
 	for _, zone := range current.InfosGrid.Zones {
 		if zone.Status {
 			tools.Title(fmt.Sprintf("Zone [%d][%d]", zone.SecteurID, zone.ZoneID))
@@ -99,6 +110,27 @@ func (cia *CiaEngine) Run() (err error) {
 					ciaCode.Instruction,
 					ciaCode.Action,
 				))
+				var errCommande error
+				var ok bool
+				switch ciaCode.Commande {
+				case "move":
+					if cia.Api.TeamBlue {
+						ok, errCommande = current.QuickMove(fmt.Sprintf("%d", zone.SecteurID), fmt.Sprintf("%d", zone.ZoneID))
+					} else {
+						ok, errCommande = current.Move(fmt.Sprintf("%d", zone.SecteurID), fmt.Sprintf("%d", zone.ZoneID))
+					}
+				}
+				if !ok {
+					err = errCommande
+					return
+				}
+				instructionSplit := strings.Split(ciaCode.Instruction, "-")
+				tools.Info(fmt.Sprintf("instruction-split = [%v]", instructionSplit))
+
+				if ciaCode.Action == "" {
+					err = errors.New("action not found")
+					return
+				}
 			}
 		}
 	}
