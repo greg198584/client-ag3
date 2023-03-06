@@ -500,7 +500,7 @@ func (a *Algo) CaptureCellEnergy(celluleID int, index int) (ok bool, err error) 
 		a.Psi = structure.ProgrammeStatusInfos{}
 		err = json.Unmarshal(res, &a.Psi)
 	}
-	return
+	return true, err
 }
 func (a *Algo) Equilibrium() (ok bool, err error) {
 	res, statusCode, err := api.RequestApi(

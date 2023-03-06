@@ -331,15 +331,14 @@ func (cia *CiaEngine) LoopCodeAction(action string, cellule structure.CelluleInf
 		switch actionSplit[0] {
 		case "capture":
 			if !ActionTrapped && !cellule.Trapped {
-				tools.Info("\t\t>> ICI <<")
 				if actionSplit[1] == "energy" {
-					count := len(celluleData)
-					tools.Info(fmt.Sprintf("\t\t>> ICI << count [%d]", count))
-					for j := 0; j < count; j++ {
-						tools.Info(fmt.Sprintf("cellule id tentative capture [%d] index [$d]", cellule.ID, j))
-						ok, _ := cia.Algo.CaptureCellEnergy(cellule.ID, j)
-						if !ok {
-							return
+					for _, data := range celluleData {
+						tools.Info(fmt.Sprintf("cellule id tentative capture [%d] index [%d]", cellule.ID, data.ID))
+						if data.Energy > 0 {
+							ok, _ := cia.Algo.CaptureCellEnergy(cellule.ID, data.ID)
+							if !ok {
+								return
+							}
 						}
 					}
 				} else if actionSplit[1] == "competence" {
