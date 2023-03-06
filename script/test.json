@@ -9,13 +9,17 @@
   "loop_cia": {
     "loop_params": {
       "stop": false,
-      "random": true
+      "random": true,
+      "energy_seuil": 10,
+      "rebuild": false,
+      "attack": false,
+      "shell_code": false
     },
     "loop_code": [
       {
         "commande": "move",
         "instruction": "wait-navigation-false",
-        "action": "stop"
+        "action": "stop-"
       },
       {
         "commande": "scan",

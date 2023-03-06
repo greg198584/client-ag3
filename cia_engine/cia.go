@@ -46,8 +46,12 @@ type SCIA struct {
 }
 
 type LoopParams struct {
-	Stop   bool `json:"stop"`
-	Random bool `json:"random"`
+	Stop        bool `json:"stop"`
+	Random      bool `json:"random"`
+	EnergySeuil int  `json:"energy_seuil"`
+	Rebuild     bool `json:"rebuild"`
+	Attack      bool `json:"attack"`
+	ShellCode   bool `json:"shell_code"`
 }
 
 func _LoadScript(name string) (cia *CiaEngine, err error) {
