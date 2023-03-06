@@ -23,9 +23,10 @@
       },
       {
         "commande": "scan",
-        "instruction": "loop-cellule-null",
-        "action": "code",
+        "instruction": "loop-cellule-code",
+        "action": "next",
         "code": {
+          "name": "explore-capture",
           "good": "energy_seuil",
           "loop_code": [
             {
@@ -38,9 +39,10 @@
       },
       {
         "commande": "scan",
-        "instruction": "loop-cellule-null",
-        "action": "code",
+        "instruction": "loop-cellule-code",
+        "action": "next",
         "code": {
+          "name": "explore-destroy-capture",
           "good": "energy_seuil",
           "loop_code": [
             {

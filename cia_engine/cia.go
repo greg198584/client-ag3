@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/greg198584/client-ag3/algo"
+	"github.com/greg198584/client-ag3/structure"
 	"github.com/greg198584/client-ag3/tools"
 	"strings"
 	"time"
@@ -47,6 +48,7 @@ type CIA struct {
 }
 
 type CiaCode struct {
+	Name     string `json:"name"`
 	Good     string `json:"good"`
 	LoopCode []CIA  `json:"loop_code"`
 }
@@ -135,6 +137,7 @@ func (cia *CiaEngine) Run() (err error) {
 				))
 				var errCommande error
 				var ok bool
+				var zoneInfos structure.ZoneInfos
 				switch ciaCode.Commande {
 				case "move":
 					if cia.Api.TeamBlue {
@@ -142,6 +145,22 @@ func (cia *CiaEngine) Run() (err error) {
 					} else {
 						ok, errCommande = cia.Algo.Move(fmt.Sprintf("%d", zone.SecteurID), fmt.Sprintf("%d", zone.ZoneID))
 					}
+					break
+				case "scan":
+					ok, res, errScan := cia.Algo.Scan()
+					if !ok {
+						errCommande = errScan
+						break
+					}
+					errCommande = json.Unmarshal(res, &zoneInfos)
+					if err != nil {
+						break
+					}
+					ok = true
+					break
+				default:
+					err = errors.New("commande not found")
+					return
 				}
 				if !ok {
 					err = errCommande
@@ -157,6 +176,12 @@ func (cia *CiaEngine) Run() (err error) {
 				case "wait":
 					err = cia.Wait(instructionSplit[1], instructionSplit[2])
 					break
+				case "loop":
+					err = cia.Loop(ciaCode.Code, instructionSplit[1], instructionSplit[2], zoneInfos)
+					break
+				default:
+					err = errors.New("action not found")
+					break
 				}
 				if err != nil {
 					return
@@ -170,6 +195,90 @@ func (cia *CiaEngine) Run() (err error) {
 					return
 				}
 			}
+		}
+	}
+	return
+}
+func (cia *CiaEngine) Loop(ciaCode CiaCode, value string, condition string, zoneInfos structure.ZoneInfos) (err error) {
+	if ciaCode.Good == "energy_seuil" && cia.Status.Energy == false {
+		return
+	}
+	switch value {
+	case "cellule":
+		for _, cellule := range zoneInfos.Cellules {
+			if condition == "code" {
+				err = cia.RunCodeCellule(ciaCode, cellule)
+			}
+			if err != nil {
+				break
+			}
+
+		}
+		break
+	default:
+		err = errors.New("erreur value instruction")
+		break
+	}
+	return
+}
+func (cia *CiaEngine) RunCodeCellule(ciaCode CiaCode, cellule structure.CelluleInfos) (err error) {
+	tools.Info(fmt.Sprintf("Run code [%s] - celluleID [%d]", ciaCode.Name, cellule.ID))
+	count := len(ciaCode.LoopCode)
+	cia.Next = true
+	for i := 0; i < count; i++ {
+		if cia.Next == false {
+			break
+		}
+		ciaCode := cia.LoopCIA.LoopCode[i]
+		tools.Info(fmt.Sprintf(
+			"\tcommande [%s] - instruction [%s] - action [%s]",
+			ciaCode.Commande,
+			ciaCode.Instruction,
+			ciaCode.Action,
+		))
+		var errCommande error
+		var ok bool
+		var res []byte
+		var celluleData structure.Cellule
+		ActionTrapped := false
+		switch ciaCode.Commande {
+		case "explore":
+			ok, res, err = cia.Algo.Explore(cellule.ID)
+			if ok {
+				errCommande = json.Unmarshal(res, &celluleData)
+				if err != nil {
+					break
+				}
+			}
+			break
+		}
+		if !ok {
+			err = errCommande
+			return
+		}
+		instructionSplit := strings.Split(ciaCode.Instruction, "-")
+		tools.Info(fmt.Sprintf("instruction-split = [%v]", instructionSplit))
+		if len(instructionSplit) != 3 {
+			err = errors.New("need 3 instructions")
+			return
+		}
+		switch instructionSplit[0] {
+		case "check":
+			if instructionSplit[1] == "trapped" && instructionSplit[2] == "true" {
+				ActionTrapped = true
+			}
+			break
+		}
+		if err != nil {
+			return
+		}
+		if ciaCode.Action == "" {
+			err = errors.New("need action")
+			return
+		}
+		err = cia.LoopCodeAction(ciaCode.Action, celluleData, ActionTrapped)
+		if err != nil {
+			return
 		}
 	}
 	return
@@ -191,6 +300,36 @@ func (cia *CiaEngine) CheckIsGood() (ok bool, err error) {
 	}
 	if energyTotal < seuilEnergy {
 		cia.Status.Energy = true
+	}
+	return
+}
+func (cia *CiaEngine) LoopCodeAction(action string, celluleData structure.Cellule, ActionTrapped bool) (err error) {
+	cia.Next = false
+	actionList := strings.Split(action, ",")
+	nbrAction := len(actionList)
+	for i := 0; i < nbrAction; i++ {
+		actionSplit := strings.Split(strings.TrimSpace(actionList[i]), "-")
+		switch actionSplit[0] {
+		case "capture":
+			if ActionTrapped && celluleData.Trapped {
+				count := len(celluleData.Datas)
+				for i := 0; i < count; i++ {
+					ok, _ := cia.Algo.CaptureCellEnergy(celluleData.ID, i)
+					if !ok {
+						return
+					}
+				}
+			}
+			break
+		case "destroy":
+			if ActionTrapped && celluleData.Trapped {
+				cia.Algo.DestroyZone(celluleData.ID, celluleData.Valeur)
+			}
+			break
+		default:
+			err = errors.New("action not found")
+			return
+		}
 	}
 	return
 }
