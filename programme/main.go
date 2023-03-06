@@ -455,6 +455,7 @@ func RunCIA(name string) {
 			err = current.Run()
 			if err != nil {
 				tools.Fail(err.Error())
+				return
 			}
 			if current.LoopCIA.LoopParams.Stop {
 				break

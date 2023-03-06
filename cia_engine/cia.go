@@ -1,7 +1,6 @@
 package cia_engine
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -104,10 +103,10 @@ func (cia *CiaEngine) Run() (err error) {
 		return
 	}
 	tools.PrintInfosGrille(cia.Algo.InfosGrid)
-	reqBodyBytes := new(bytes.Buffer)
-	json.NewEncoder(reqBodyBytes).Encode(cia)
-	jsonPretty, _ := tools.PrettyString(reqBodyBytes.Bytes())
-	fmt.Println(jsonPretty)
+	//reqBodyBytes := new(bytes.Buffer)
+	//json.NewEncoder(reqBodyBytes).Encode(cia)
+	//jsonPretty, _ := tools.PrettyString(reqBodyBytes.Bytes())
+	//fmt.Println(jsonPretty)
 	if cia.AutoConnect {
 		if ok, errLoad := cia.Algo.LoadProgramme(); !ok {
 			err = errLoad
@@ -135,24 +134,23 @@ func (cia *CiaEngine) Run() (err error) {
 					ciaCode.Instruction,
 					ciaCode.Action,
 				))
-				var errCommande error
-				var ok bool
 				var zoneInfos structure.ZoneInfos
+				ok := false
 				switch ciaCode.Commande {
 				case "move":
 					if cia.Api.TeamBlue {
-						ok, errCommande = cia.Algo.QuickMove(fmt.Sprintf("%d", zone.SecteurID), fmt.Sprintf("%d", zone.ZoneID))
+						ok, err = cia.Algo.QuickMove(fmt.Sprintf("%d", zone.SecteurID), fmt.Sprintf("%d", zone.ZoneID))
 					} else {
-						ok, errCommande = cia.Algo.Move(fmt.Sprintf("%d", zone.SecteurID), fmt.Sprintf("%d", zone.ZoneID))
+						ok, err = cia.Algo.Move(fmt.Sprintf("%d", zone.SecteurID), fmt.Sprintf("%d", zone.ZoneID))
 					}
 					break
 				case "scan":
-					ok, res, errScan := cia.Algo.Scan()
-					if !ok {
-						errCommande = errScan
+					_, res, errScan := cia.Algo.Scan()
+					if errScan != nil {
+						err = errScan
 						break
 					}
-					errCommande = json.Unmarshal(res, &zoneInfos)
+					err = json.Unmarshal(res, &zoneInfos)
 					if err != nil {
 						break
 					}
@@ -163,7 +161,9 @@ func (cia *CiaEngine) Run() (err error) {
 					return
 				}
 				if !ok {
-					err = errCommande
+					if err == nil {
+						err = errors.New("erreur run commande")
+					}
 					return
 				}
 				instructionSplit := strings.Split(ciaCode.Instruction, "-")
@@ -200,7 +200,8 @@ func (cia *CiaEngine) Run() (err error) {
 	return
 }
 func (cia *CiaEngine) Loop(ciaCode CiaCode, value string, condition string, zoneInfos structure.ZoneInfos) (err error) {
-	if ciaCode.Good == "energy_seuil" && cia.Status.Energy == false {
+	tools.Title("Loop")
+	if ciaCode.Good == "energy_seuil" && !cia.Status.Energy {
 		return
 	}
 	switch value {
@@ -224,24 +225,20 @@ func (cia *CiaEngine) Loop(ciaCode CiaCode, value string, condition string, zone
 func (cia *CiaEngine) RunCodeCellule(ciaCode CiaCode, cellule structure.CelluleInfos) (err error) {
 	tools.Info(fmt.Sprintf("Run code [%s] - celluleID [%d]", ciaCode.Name, cellule.ID))
 	count := len(ciaCode.LoopCode)
-	cia.Next = true
 	for i := 0; i < count; i++ {
-		if cia.Next == false {
-			break
-		}
-		ciaCode := cia.LoopCIA.LoopCode[i]
+		currentCia := ciaCode.LoopCode[i]
 		tools.Info(fmt.Sprintf(
 			"\tcommande [%s] - instruction [%s] - action [%s]",
-			ciaCode.Commande,
-			ciaCode.Instruction,
-			ciaCode.Action,
+			currentCia.Commande,
+			currentCia.Instruction,
+			currentCia.Action,
 		))
 		var errCommande error
 		var ok bool
 		var res []byte
-		var celluleData structure.Cellule
+		var celluleData map[int]structure.CelluleData
 		ActionTrapped := false
-		switch ciaCode.Commande {
+		switch currentCia.Commande {
 		case "explore":
 			ok, res, err = cia.Algo.Explore(cellule.ID)
 			if ok {
@@ -256,7 +253,7 @@ func (cia *CiaEngine) RunCodeCellule(ciaCode CiaCode, cellule structure.CelluleI
 			err = errCommande
 			return
 		}
-		instructionSplit := strings.Split(ciaCode.Instruction, "-")
+		instructionSplit := strings.Split(currentCia.Instruction, "-")
 		tools.Info(fmt.Sprintf("instruction-split = [%v]", instructionSplit))
 		if len(instructionSplit) != 3 {
 			err = errors.New("need 3 instructions")
@@ -272,18 +269,22 @@ func (cia *CiaEngine) RunCodeCellule(ciaCode CiaCode, cellule structure.CelluleI
 		if err != nil {
 			return
 		}
-		if ciaCode.Action == "" {
+		if currentCia.Action == "" {
 			err = errors.New("need action")
 			return
 		}
-		err = cia.LoopCodeAction(ciaCode.Action, celluleData, ActionTrapped)
+		err = cia.LoopCodeAction(currentCia.Action, cellule, celluleData, ActionTrapped)
 		if err != nil {
 			return
 		}
 	}
+	cia.Algo.Equilibrium()
+	cia.Algo.ExplorationStop()
 	return
 }
 func (cia *CiaEngine) CheckIsGood() (ok bool, err error) {
+	tools.Title("Check is Good")
+	ok = true
 	if ok, err = cia.Algo.GetInfosProgramme(); !ok {
 		return
 	}
@@ -297,33 +298,54 @@ func (cia *CiaEngine) CheckIsGood() (ok bool, err error) {
 	seuilEnergy := ((cia.Algo.Psi.Programme.Level * algo.MAX_VALEUR) * algo.MAX_CELLULES) * 10
 	if valeurTotal < seuilValeur {
 		cia.Status.Rebuild = true
+		ok = false
 	}
 	if energyTotal < seuilEnergy {
 		cia.Status.Energy = true
+		ok = false
 	}
+	tools.Info(fmt.Sprintf(
+		"--- Report is good : valeur [%d] - seuil [%d] - [%t] | energy [%d] - seuil [%d] - [%t]",
+		valeurTotal,
+		seuilValeur,
+		cia.Status.Rebuild,
+		energyTotal,
+		seuilEnergy,
+		cia.Status.Energy,
+	))
 	return
 }
-func (cia *CiaEngine) LoopCodeAction(action string, celluleData structure.Cellule, ActionTrapped bool) (err error) {
+func (cia *CiaEngine) LoopCodeAction(action string, cellule structure.CelluleInfos, celluleData map[int]structure.CelluleData, ActionTrapped bool) (err error) {
+	tools.Title("Loop code action")
 	cia.Next = false
 	actionList := strings.Split(action, ",")
 	nbrAction := len(actionList)
 	for i := 0; i < nbrAction; i++ {
 		actionSplit := strings.Split(strings.TrimSpace(actionList[i]), "-")
+		tools.Info(fmt.Sprintf(
+			"action-split = [%v] -  ActionTrapped [%t] - celluleTrapped [%t]",
+			actionSplit,
+			ActionTrapped,
+			cellule.Trapped,
+		))
 		switch actionSplit[0] {
 		case "capture":
-			if ActionTrapped && celluleData.Trapped {
+			if !ActionTrapped && !cellule.Trapped {
+				tools.Info("\t\t>> ICI <<")
 				if actionSplit[1] == "energy" {
-					count := len(celluleData.Datas)
-					for i := 0; i < count; i++ {
-						ok, _ := cia.Algo.CaptureCellEnergy(celluleData.ID, i)
+					count := len(celluleData)
+					tools.Info(fmt.Sprintf("\t\t>> ICI << count [%d]", count))
+					for j := 0; j < count; j++ {
+						tools.Info(fmt.Sprintf("cellule id tentative capture [%d] index [$d]", cellule.ID, j))
+						ok, _ := cia.Algo.CaptureCellEnergy(cellule.ID, j)
 						if !ok {
 							return
 						}
 					}
 				} else if actionSplit[1] == "competence" {
-					for _, data := range celluleData.Datas {
+					for _, data := range celluleData {
 						if data.Competence {
-							ok, _ := cia.Algo.CaptureCellData(celluleData.ID, data.ID)
+							ok, _ := cia.Algo.CaptureCellData(cellule.ID, data.ID)
 							if !ok {
 								return
 							}
@@ -333,12 +355,14 @@ func (cia *CiaEngine) LoopCodeAction(action string, celluleData structure.Cellul
 			}
 			break
 		case "destroy":
-			if ActionTrapped && celluleData.Trapped {
-				cia.Algo.DestroyZone(celluleData.ID, celluleData.Valeur)
+			if ActionTrapped && cellule.Trapped {
+				cia.Algo.DestroyZone(cellule.ID, cellule.Valeur)
 			}
 			break
+		case "next":
+			break
 		default:
-			err = errors.New("action not found")
+			err = errors.New("code action not found")
 			return
 		}
 	}
@@ -361,7 +385,7 @@ func (cia *CiaEngine) Action(action string) (err error) {
 				case "good":
 					if ok, errCheck := cia.CheckIsGood(); !ok {
 						err = errCheck
-						switch actionList[1] {
+						switch actionSplit[1] {
 						case "is":
 							cia.Next = true
 							break
