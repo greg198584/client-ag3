@@ -8,14 +8,17 @@ import (
 	"github.com/greg198584/client-ag3/algo"
 	"github.com/greg198584/client-ag3/tools"
 	"strings"
+	"time"
 )
 
 type CiaEngine struct {
+	Algo          *algo.Algo
 	ScriptName    string  `json:"script_name"`
 	ProgrammeName string  `json:"programme_name"`
 	AutoConnect   bool    `json:"auto_connect"`
 	Api           Api     `json:"api"`
 	LoopCIA       LoopCia `json:"loop_cia"`
+	Next          bool    `json:"next"`
 }
 
 type Api struct {
@@ -69,40 +72,43 @@ func New(name string) (cia *CiaEngine, err error) {
 
 func (cia *CiaEngine) Run() (err error) {
 	tools.Info(fmt.Sprintf("Run script [%s] - programme [%s]", cia.ScriptName, cia.ProgrammeName))
-	var current *algo.Algo
 	if cia.Api.TeamBlue {
-		current, err = algo.NewAlgoBlueTeam(cia.ProgrammeName, cia.Api.Url)
+		cia.Algo, err = algo.NewAlgoBlueTeam(cia.ProgrammeName, cia.Api.Url)
 	} else {
-		current, err = algo.NewAlgo(cia.ProgrammeName, cia.Api.Url)
+		cia.Algo, err = algo.NewAlgo(cia.ProgrammeName, cia.Api.Url)
 	}
 	if err != nil {
 		return
 	}
-	err = current.GetStatusGrid()
+	err = cia.Algo.GetStatusGrid()
 	if err != nil {
 		return
 	}
-	tools.PrintInfosGrille(current.InfosGrid)
+	tools.PrintInfosGrille(cia.Algo.InfosGrid)
 	reqBodyBytes := new(bytes.Buffer)
 	json.NewEncoder(reqBodyBytes).Encode(cia)
 	jsonPretty, _ := tools.PrettyString(reqBodyBytes.Bytes())
 	fmt.Println(jsonPretty)
 	if cia.AutoConnect {
-		if ok, errLoad := current.LoadProgramme(); !ok {
+		if ok, errLoad := cia.Algo.LoadProgramme(); !ok {
 			err = errLoad
 			return
 		}
 	} else {
-		if ok, errInfo := current.GetInfosProgramme(); !ok {
+		if ok, errInfo := cia.Algo.GetInfosProgramme(); !ok {
 			err = errInfo
 			return
 		}
 	}
-	for _, zone := range current.InfosGrid.Zones {
+	for _, zone := range cia.Algo.InfosGrid.Zones {
 		if zone.Status {
 			tools.Title(fmt.Sprintf("Zone [%d][%d]", zone.SecteurID, zone.ZoneID))
 			count := len(cia.LoopCIA.LoopCode)
+			cia.Next = true
 			for i := 0; i < count; i++ {
+				if cia.Next == false {
+					break
+				}
 				ciaCode := cia.LoopCIA.LoopCode[i]
 				tools.Info(fmt.Sprintf(
 					"\tcommande [%s] - instruction [%s] - action [%s]",
@@ -115,9 +121,9 @@ func (cia *CiaEngine) Run() (err error) {
 				switch ciaCode.Commande {
 				case "move":
 					if cia.Api.TeamBlue {
-						ok, errCommande = current.QuickMove(fmt.Sprintf("%d", zone.SecteurID), fmt.Sprintf("%d", zone.ZoneID))
+						ok, errCommande = cia.Algo.QuickMove(fmt.Sprintf("%d", zone.SecteurID), fmt.Sprintf("%d", zone.ZoneID))
 					} else {
-						ok, errCommande = current.Move(fmt.Sprintf("%d", zone.SecteurID), fmt.Sprintf("%d", zone.ZoneID))
+						ok, errCommande = cia.Algo.Move(fmt.Sprintf("%d", zone.SecteurID), fmt.Sprintf("%d", zone.ZoneID))
 					}
 				}
 				if !ok {
@@ -126,13 +132,62 @@ func (cia *CiaEngine) Run() (err error) {
 				}
 				instructionSplit := strings.Split(ciaCode.Instruction, "-")
 				tools.Info(fmt.Sprintf("instruction-split = [%v]", instructionSplit))
-
+				if len(instructionSplit) != 3 {
+					err = errors.New("need 3 instructions")
+					return
+				}
+				switch instructionSplit[0] {
+				case "wait":
+					err = cia.Wait(instructionSplit[1], instructionSplit[2])
+					break
+				}
+				if err != nil {
+					return
+				}
 				if ciaCode.Action == "" {
-					err = errors.New("action not found")
+					err = errors.New("need action")
+					return
+				}
+				err = cia.Action(ciaCode.Action)
+				if err != nil {
 					return
 				}
 			}
 		}
 	}
 	return
+}
+func (cia *CiaEngine) Action(action string) (err error) {
+	cia.Next = false
+	actionList := strings.Split(action, ",")
+	nbrAction := len(actionList)
+	for i := 0; i < nbrAction; i++ {
+		actionSplit := strings.Split(actionList[0], "-")
+		switch actionSplit[0] {
+		case "next":
+			cia.Next = true
+			return
+		case "stop":
+			return
+		}
+	}
+	return
+}
+func (cia *CiaEngine) Wait(value string, condition string) (err error) {
+	for {
+		time.Sleep(algo.TIME_MILLISECONDE * time.Millisecond)
+		if ok, errInfos := cia.Algo.GetInfosProgramme(); !ok {
+			err = errInfos
+			return
+		}
+		switch value {
+		case "navigation":
+			if cia.Algo.Psi.Navigation == false && condition == "false" {
+				return
+			}
+			if cia.Algo.Psi.Navigation && condition == "true" {
+				return
+			}
+		}
+	}
 }

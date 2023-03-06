@@ -15,7 +15,7 @@
       {
         "commande": "move",
         "instruction": "wait-navigation-false",
-        "action": "next"
+        "action": "stop"
       },
       {
         "commande": "scan",
