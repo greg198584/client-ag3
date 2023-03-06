@@ -19,8 +19,15 @@ type CiaEngine struct {
 	Api           Api     `json:"api"`
 	LoopCIA       LoopCia `json:"loop_cia"`
 	Next          bool    `json:"next"`
+	Status        Status  `json:"status"`
 }
 
+type Status struct {
+	Energy    bool `json:"energy"`
+	Rebuild   bool `json:"rebuild"`
+	Attack    bool `json:"attack"`
+	ShellCode bool `json:"shellcode"`
+}
 type Api struct {
 	Url      string `json:"url"`
 	TeamBlue bool   `json:"team_blue"`
@@ -33,16 +40,15 @@ type LoopCia struct {
 }
 
 type CIA struct {
-	Commande    string `json:"commande"`
-	Instruction string `json:"instruction"`
-	Action      string `json:"action"`
-	LoopCode    []SCIA `json:"loop_code"`
+	Commande    string  `json:"commande"`
+	Instruction string  `json:"instruction"`
+	Action      string  `json:"action"`
+	Code        CiaCode `json:"code"`
 }
 
-type SCIA struct {
-	Commande    string `json:"commande"`
-	Instruction string `json:"instruction"`
-	Action      string `json:"action"`
+type CiaCode struct {
+	Good     string `json:"good"`
+	LoopCode []CIA  `json:"loop_code"`
 }
 
 type LoopParams struct {
@@ -51,7 +57,7 @@ type LoopParams struct {
 	EnergySeuil int  `json:"energy_seuil"`
 	Rebuild     bool `json:"rebuild"`
 	Attack      bool `json:"attack"`
-	ShellCode   bool `json:"shell_code"`
+	ShellCode   bool `json:"shellcode"`
 }
 
 func _LoadScript(name string) (cia *CiaEngine, err error) {
@@ -73,7 +79,14 @@ func New(name string) (cia *CiaEngine, err error) {
 	cia.ScriptName = name
 	return
 }
-
+func NewFromSpeedCode(speedCode string) (cia *CiaEngine, err error) {
+	//cia, err = _LoadScript(name)
+	//if err != nil {
+	//	return
+	//}
+	//cia.ScriptName = name
+	return
+}
 func (cia *CiaEngine) Run() (err error) {
 	tools.Info(fmt.Sprintf("Run script [%s] - programme [%s]", cia.ScriptName, cia.ProgrammeName))
 	if cia.Api.TeamBlue {
@@ -161,17 +174,62 @@ func (cia *CiaEngine) Run() (err error) {
 	}
 	return
 }
+func (cia *CiaEngine) CheckIsGood() (ok bool, err error) {
+	if ok, err = cia.Algo.GetInfosProgramme(); !ok {
+		return
+	}
+	energyTotal := 0
+	valeurTotal := 0
+	for _, cellule := range cia.Algo.Psi.Programme.Cellules {
+		energyTotal += cellule.Energy
+		valeurTotal += cellule.Valeur
+	}
+	seuilValeur := (cia.Algo.Psi.Programme.Level * algo.MAX_VALEUR) * algo.MAX_CELLULES
+	seuilEnergy := ((cia.Algo.Psi.Programme.Level * algo.MAX_VALEUR) * algo.MAX_CELLULES) * 10
+	if valeurTotal < seuilValeur {
+		cia.Status.Rebuild = true
+	}
+	if energyTotal < seuilEnergy {
+		cia.Status.Energy = true
+	}
+	return
+}
 func (cia *CiaEngine) Action(action string) (err error) {
 	cia.Next = false
 	actionList := strings.Split(action, ",")
 	nbrAction := len(actionList)
 	for i := 0; i < nbrAction; i++ {
-		actionSplit := strings.Split(actionList[0], "-")
+		actionSplit := strings.Split(strings.TrimSpace(actionList[i]), "-")
 		switch actionSplit[0] {
 		case "next":
 			cia.Next = true
 			return
 		case "stop":
+			if len(actionSplit) > 2 {
+				condition := actionSplit[2]
+				switch condition {
+				case "good":
+					if ok, errCheck := cia.CheckIsGood(); !ok {
+						err = errCheck
+						switch actionList[1] {
+						case "is":
+							cia.Next = true
+							break
+						case "isnot":
+							break
+						default:
+							break
+						}
+					}
+					break
+				default:
+					err = errors.New("action fail condition")
+					break
+				}
+			}
+			return
+		default:
+			err = errors.New("action not found")
 			return
 		}
 	}
