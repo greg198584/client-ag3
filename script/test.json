@@ -32,7 +32,7 @@
             {
               "commande": "explore",
               "instruction": "check-trapped-false",
-              "action": "capture-energie, capture-competence, next"
+              "action": "capture-energy, capture-competence, next"
             }
           ]
         }

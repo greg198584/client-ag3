@@ -312,11 +312,22 @@ func (cia *CiaEngine) LoopCodeAction(action string, celluleData structure.Cellul
 		switch actionSplit[0] {
 		case "capture":
 			if ActionTrapped && celluleData.Trapped {
-				count := len(celluleData.Datas)
-				for i := 0; i < count; i++ {
-					ok, _ := cia.Algo.CaptureCellEnergy(celluleData.ID, i)
-					if !ok {
-						return
+				if actionSplit[1] == "energy" {
+					count := len(celluleData.Datas)
+					for i := 0; i < count; i++ {
+						ok, _ := cia.Algo.CaptureCellEnergy(celluleData.ID, i)
+						if !ok {
+							return
+						}
+					}
+				} else if actionSplit[1] == "competence" {
+					for _, data := range celluleData.Datas {
+						if data.Competence {
+							ok, _ := cia.Algo.CaptureCellData(celluleData.ID, data.ID)
+							if !ok {
+								return
+							}
+						}
 					}
 				}
 			}
