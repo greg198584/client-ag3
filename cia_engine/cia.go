@@ -27,6 +27,7 @@ type Status struct {
 	Rebuild   bool `json:"rebuild"`
 	Attack    bool `json:"attack"`
 	ShellCode bool `json:"shellcode"`
+	FlagFound bool `json:"flag_found"`
 }
 type Api struct {
 	Url      string `json:"url"`
@@ -59,6 +60,13 @@ type LoopParams struct {
 	Rebuild     bool `json:"rebuild"`
 	Attack      bool `json:"attack"`
 	ShellCode   bool `json:"shellcode"`
+	FlagFound   bool `json:"flag_found"`
+}
+type CelluleDataList struct {
+	CelluleID   int
+	Valeur      int
+	Trapped     bool
+	CelluleData map[int]structure.CelluleData `json:"cellule_data"`
 }
 
 func _LoadScript(name string) (cia *CiaEngine, err error) {
@@ -124,9 +132,11 @@ func (cia *CiaEngine) Run() (err error) {
 			count := len(cia.LoopCIA.LoopCode)
 			cia.Next = true
 			for i := 0; i < count; i++ {
+				forceNext := false
 				if cia.Next == false {
 					break
 				}
+				cia.Next = false
 				ciaCode := cia.LoopCIA.LoopCode[i]
 				tools.Info(fmt.Sprintf(
 					"\tcommande [%s] - instruction [%s] - action [%s]",
@@ -156,6 +166,23 @@ func (cia *CiaEngine) Run() (err error) {
 					}
 					ok = true
 					break
+				case "move_zt":
+					if cia.Status.FlagFound {
+						if cia.Api.TeamBlue {
+							ok, err = cia.Algo.QuickMove(
+								fmt.Sprintf("%d", cia.Algo.InfosGrid.ZoneTransfert.SecteurID),
+								fmt.Sprintf("%d", cia.Algo.InfosGrid.ZoneTransfert.ZoneID),
+							)
+						} else {
+							ok, err = cia.Algo.Move(
+								fmt.Sprintf("%d", cia.Algo.InfosGrid.ZoneTransfert.SecteurID),
+								fmt.Sprintf("%d", cia.Algo.InfosGrid.ZoneTransfert.ZoneID),
+							)
+						}
+					} else {
+						forceNext = true
+					}
+					ok = true
 				default:
 					err = errors.New("commande not found")
 					return
@@ -165,6 +192,9 @@ func (cia *CiaEngine) Run() (err error) {
 						err = errors.New("erreur run commande")
 					}
 					return
+				}
+				if forceNext {
+					cia.Next = false
 				}
 				instructionSplit := strings.Split(ciaCode.Instruction, "-")
 				tools.Info(fmt.Sprintf("instruction-split = [%v]", instructionSplit))
@@ -179,8 +209,10 @@ func (cia *CiaEngine) Run() (err error) {
 				case "loop":
 					err = cia.Loop(ciaCode.Code, instructionSplit[1], instructionSplit[2], zoneInfos)
 					break
+				case "nop":
+					break
 				default:
-					err = errors.New("action not found")
+					err = errors.New("instruction not found")
 					break
 				}
 				if err != nil {
@@ -190,7 +222,7 @@ func (cia *CiaEngine) Run() (err error) {
 					err = errors.New("need action")
 					return
 				}
-				err = cia.Action(ciaCode.Action)
+				err = cia.Action(ciaCode)
 				if err != nil {
 					return
 				}
@@ -223,7 +255,7 @@ func (cia *CiaEngine) Loop(ciaCode CiaCode, value string, condition string, zone
 	return
 }
 func (cia *CiaEngine) RunCodeCellule(ciaCode CiaCode, cellule structure.CelluleInfos) (err error) {
-	tools.Info(fmt.Sprintf("Run code [%s] - celluleID [%d]", ciaCode.Name, cellule.ID))
+	tools.Info(fmt.Sprintf("Run code cellule [%s] - celluleID [%d]", ciaCode.Name, cellule.ID))
 	count := len(ciaCode.LoopCode)
 	for i := 0; i < count; i++ {
 		currentCia := ciaCode.LoopCode[i]
@@ -282,6 +314,140 @@ func (cia *CiaEngine) RunCodeCellule(ciaCode CiaCode, cellule structure.CelluleI
 	cia.Algo.ExplorationStop()
 	return
 }
+func (cia *CiaEngine) RunCode(ciaCode CiaCode) (err error) {
+	tools.Info(fmt.Sprintf("Run code [%s]", ciaCode.Name))
+	count := len(ciaCode.LoopCode)
+	//var celluleDataList map[int]CelluleDataList
+	celluleDataList := make(map[int]CelluleDataList)
+	var zoneInfos structure.ZoneInfos
+	for i := 0; i < count; i++ {
+		currentCia := ciaCode.LoopCode[i]
+		tools.Info(fmt.Sprintf(
+			"\tcommande [%s] - instruction [%s] - action [%s]",
+			currentCia.Commande,
+			currentCia.Instruction,
+			currentCia.Action,
+		))
+		var errCommande error
+		ok := false
+		ActionTrapped := false
+		ActionCaptureFlag := false
+		switch currentCia.Commande {
+		case "scan":
+			_, res, errScan := cia.Algo.Scan()
+			if errScan != nil {
+				err = errScan
+				break
+			}
+			err = json.Unmarshal(res, &zoneInfos)
+			if err != nil {
+				break
+			}
+			ok = true
+			break
+		case "explore":
+			for _, cellule := range zoneInfos.Cellules {
+				_, res, errExplore := cia.Algo.Explore(cellule.ID)
+				if errExplore != nil {
+					err = errExplore
+					break
+				}
+				var celluleData map[int]structure.CelluleData
+				err = json.Unmarshal(res, &celluleData)
+				if err != nil {
+					break
+				}
+				celluleDataList[cellule.ID] = CelluleDataList{
+					CelluleID:   cellule.ID,
+					Valeur:      cellule.Valeur,
+					Trapped:     cellule.Trapped,
+					CelluleData: celluleData,
+				}
+				ok = true
+				break
+			}
+		case "searchflag":
+			ok = true
+			break
+		case "pushflag":
+			ok, err = cia.Algo.PushFlag()
+			return
+		}
+		if !ok {
+			err = errCommande
+			return
+		}
+		instructionSplit := strings.Split(currentCia.Instruction, "-")
+		tools.Info(fmt.Sprintf("instruction-split = [%v]", instructionSplit))
+		if len(instructionSplit) != 3 {
+			err = errors.New("need 3 instructions")
+			return
+		}
+		switch instructionSplit[0] {
+		case "check":
+			if instructionSplit[1] == "trapped" && instructionSplit[2] == "true" {
+				ActionTrapped = true
+			}
+			if instructionSplit[1] == "flag" && instructionSplit[2] == "true" {
+				ActionCaptureFlag = true
+			}
+			break
+		case "loop":
+			if instructionSplit[1] == "cellule" && instructionSplit[2] == "next" {
+				break
+			} else {
+				err = errors.New("need 3 instructions")
+				return
+			}
+			break
+		}
+		if err != nil {
+			return
+		}
+		if currentCia.Action == "" {
+			err = errors.New("need action")
+			return
+		}
+		cia.ActionCode(currentCia.Action, celluleDataList, ActionTrapped, ActionCaptureFlag)
+	}
+	cia.Algo.Equilibrium()
+	cia.Algo.ExplorationStop()
+	return
+}
+func (cia *CiaEngine) ActionCode(action string, celluleDataList map[int]CelluleDataList, ActionTrapped bool, ActionCaptureFlag bool) {
+	actionList := strings.Split(action, ",")
+	nbrAction := len(actionList)
+	for i := 0; i < nbrAction; i++ {
+		actionSplit := strings.Split(strings.TrimSpace(actionList[i]), "-")
+		switch actionSplit[0] {
+		case "next":
+			return
+		case "destroy":
+			for _, cellule := range celluleDataList {
+				if ActionTrapped && cellule.Trapped {
+					cia.Algo.DestroyZone(cellule.CelluleID, cellule.Valeur)
+				}
+			}
+		case "capture":
+			if ActionCaptureFlag {
+				for _, cellule := range celluleDataList {
+					for _, data := range cellule.CelluleData {
+						tools.Info(fmt.Sprintf("cellule ID: [%d] - data [%d]", cellule.CelluleID, data.ID))
+						if data.IsFlag {
+							tools.Success("flag found")
+							cia.Algo.CaptureCellData(cellule.CelluleID, data.ID)
+							break
+						}
+					}
+				}
+				tools.Fail("flag not found")
+			}
+		default:
+			return
+		}
+	}
+	return
+}
 func (cia *CiaEngine) CheckIsGood() (ok bool, err error) {
 	tools.Title("Check is Good")
 	ok = true
@@ -313,6 +479,14 @@ func (cia *CiaEngine) CheckIsGood() (ok bool, err error) {
 		seuilEnergy,
 		cia.Status.Energy,
 	))
+	for _, cellule := range cia.Algo.Psi.Programme.Cellules {
+		for _, data := range cellule.Datas {
+			if data.IsFlag {
+				cia.Status.FlagFound = true
+				ok = false
+			}
+		}
+	}
 	return
 }
 func (cia *CiaEngine) LoopCodeAction(action string, cellule structure.CelluleInfos, celluleData map[int]structure.CelluleData, ActionTrapped bool) (err error) {
@@ -367,11 +541,12 @@ func (cia *CiaEngine) LoopCodeAction(action string, cellule structure.CelluleInf
 	}
 	return
 }
-func (cia *CiaEngine) Action(action string) (err error) {
-	cia.Next = false
-	actionList := strings.Split(action, ",")
+func (cia *CiaEngine) Action(ciaCode CIA) (err error) {
+	tools.Info(fmt.Sprintf("Run action [%s]", ciaCode.Action))
+	actionList := strings.Split(ciaCode.Action, ",")
 	nbrAction := len(actionList)
 	for i := 0; i < nbrAction; i++ {
+		cia.Next = false
 		actionSplit := strings.Split(strings.TrimSpace(actionList[i]), "-")
 		switch actionSplit[0] {
 		case "next":
@@ -401,6 +576,9 @@ func (cia *CiaEngine) Action(action string) (err error) {
 				}
 			}
 			return
+		case "code":
+			err = cia.RunCode(ciaCode.Code)
+			break
 		default:
 			err = errors.New("action not found")
 			return
