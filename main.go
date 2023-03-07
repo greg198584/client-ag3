@@ -280,7 +280,7 @@ func main() {
 			programme.ActiveCaptureFlag(*pname, *apiteam, *Flag)
 		}
 	})
-	app.Command("cia", "run script cia (coding-instruction-action)", func(cmd *mowcli.Cmd) {
+	app.Command("cia", "run script cia (commande-instruction-action)", func(cmd *mowcli.Cmd) {
 		var (
 			scriptName = cmd.StringOpt("n name", "", "nom du script")
 		)
