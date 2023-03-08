@@ -13,7 +13,7 @@
       "energy_seuil": 10,
       "rebuild": true,
       "attack": true,
-      "shellcode": false
+      "shellcode": true
     },
     "loop_code": [
       {

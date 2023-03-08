@@ -90,7 +90,7 @@ func Load(name string, apiteam string, team string) {
 		}
 	} else {
 		current, err = algo.NewAlgo(name, GetApiUrl(apiteam))
-		current.LoadProgramme()
+		current.LoadProgramme(false)
 		current.GetInfosProgramme()
 		if err != nil {
 			tools.Fail(err.Error())

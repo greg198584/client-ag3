@@ -1,6 +1,7 @@
 {
   "programme_name": "batman",
   "auto_connect": true,
+  "zone_actif": false,
   "api": {
     "url": "http://localhost:20180",
     "team_blue": true,
@@ -13,50 +14,13 @@
       "energy_seuil": 10,
       "rebuild": true,
       "attack": true,
-      "shellcode": false
+      "shellcode": true
     },
     "loop_code": [
       {
         "commande": "move",
         "instruction": "wait-navigation-false",
-        "action": "code,stop-isnot-good",
-        "code": {
-          "name": "search-flag",
-          "good": "",
-          "loop_code": [
-            {
-              "commande": "scan",
-              "instruction": "loop-cellule-next",
-              "action": "next"
-            },
-            {
-              "commande": "explore",
-              "instruction": "check-trapped-true",
-              "action": "destroy-max, next"
-            },
-            {
-              "commande": "searchflag",
-              "instruction": "check-flag-true",
-              "action": "capture,next"
-            }
-          ]
-        }
-      },
-      {
-        "commande": "move_zt",
-        "instruction": "wait-navigation-false",
-        "action": "code,next",
-        "code": {
-          "name": "push-flag",
-          "good": "flag_found",
-          "loop_code": [
-            {
-              "commande": "pushflag",
-              "instruction": "nop",
-              "action": "stop"
-            }
-          ]
-        }
+        "action": "stop-isnot-good"
       },
       {
         "commande": "rebuild",

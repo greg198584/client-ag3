@@ -16,6 +16,7 @@ type CiaEngine struct {
 	ScriptName    string        `json:"script_name"`
 	ProgrammeName string        `json:"programme_name"`
 	AutoConnect   bool          `json:"auto_connect"`
+	ZoneActif     bool          `json:"zone_actif"`
 	Api           Api           `json:"api"`
 	LoopCIA       LoopCia       `json:"loop_cia"`
 	Next          bool          `json:"next"`
@@ -27,6 +28,7 @@ type GrilleZoneMem struct {
 	ZoneInfos        structure.ZoneInfos
 	Targets          []string
 	Cellules         map[int]*structure.Cellule
+	ShellCodeTarget  []structure.ShellcodeData
 	MaxValeurCellule int
 	MaxEnergyCellule int
 }
@@ -125,21 +127,23 @@ func (cia *CiaEngine) Run() (err error) {
 	//jsonPretty, _ := tools.PrettyString(reqBodyBytes.Bytes())
 	//fmt.Println(jsonPretty)
 	if cia.AutoConnect {
-		if ok, errLoad := cia.Algo.LoadProgramme(); !ok {
+		if ok, errLoad := cia.Algo.LoadProgramme(cia.Api.TeamBlue); !ok {
 			err = errLoad
 			return
 		}
-	} else {
-		if ok, errInfo := cia.Algo.GetInfosProgramme(); !ok {
-			err = errInfo
-			return
-		}
+	}
+	if ok, errInfo := cia.Algo.GetInfosProgramme(); !ok {
+		err = errInfo
+		return
 	}
 	cia.Mem.MaxValeurCellule = (cia.Algo.Psi.Programme.Level * algo.MAX_VALEUR) * algo.MAX_CELLULES
 	cia.Mem.MaxEnergyCellule = ((cia.Algo.Psi.Programme.Level * algo.MAX_VALEUR) * algo.MAX_CELLULES) * 10
 	cia.Algo.ExplorationStop()
 	for _, zone := range cia.Algo.InfosGrid.Zones {
 		if zone.Status {
+			if zone.Actif == false && cia.ZoneActif {
+				continue
+			}
 			count := len(cia.LoopCIA.LoopCode)
 			tools.Title(fmt.Sprintf("Zone [%d][%d] - cia [%d]", zone.SecteurID, zone.ZoneID, count))
 			cia.Next = true
@@ -207,6 +211,7 @@ func (cia *CiaEngine) Run() (err error) {
 					ok = true
 				case "rebuild":
 					if cia.Status.Rebuild && cia.LoopCIA.LoopParams.Rebuild {
+						cia.Algo.GetInfosProgramme()
 						ok = true
 					} else {
 						ok = true
@@ -223,9 +228,10 @@ func (cia *CiaEngine) Run() (err error) {
 					}
 					break
 				case "shellcode":
-					cia.Status.ShellCode = true
-					forceNext = true
-					ok = true
+					if cia.LoopCIA.LoopParams.ShellCode {
+						cia.Status.ShellCode = true
+						ok = true
+					}
 					break
 				default:
 					err = errors.New("commande not found")
@@ -274,7 +280,7 @@ func (cia *CiaEngine) Run() (err error) {
 					break
 				case "active":
 					if cia.Status.ShellCode {
-						// TODO active shellcode + add to Mem
+						_, cia.Mem.ShellCodeTarget, err = cia.Algo.ShellCode()
 					}
 					break
 				default:
@@ -540,23 +546,22 @@ func (cia *CiaEngine) CheckIsGood() (ok bool, err error) {
 		energyTotal += cellule.Energy
 		valeurTotal += cellule.Valeur
 	}
-	seuilValeur := cia.Mem.MaxValeurCellule
-	seuilEnergy := cia.Mem.MaxEnergyCellule
-	if valeurTotal < seuilValeur {
+	if valeurTotal < cia.Mem.MaxValeurCellule {
 		cia.Status.Rebuild = true
 		ok = false
 	}
-	if energyTotal < seuilEnergy {
+	if energyTotal < cia.Mem.MaxEnergyCellule {
 		cia.Status.Energy = true
 		ok = false
 	}
 	tools.Info(fmt.Sprintf(
-		"--- Report is good : valeur [%d] - seuil [%d] - [%t] | energy [%d] - seuil [%d] - [%t]",
+		"--- Report is good [%t]: valeur [%d] - seuil [%d] - [%t] | energy [%d] - seuil [%d] - [%t]",
+		ok,
 		valeurTotal,
-		seuilValeur,
+		cia.Mem.MaxValeurCellule,
 		cia.Status.Rebuild,
 		energyTotal,
-		seuilEnergy,
+		cia.Mem.MaxEnergyCellule,
 		cia.Status.Energy,
 	))
 	cia.Status.FlagFound = false
@@ -564,7 +569,6 @@ func (cia *CiaEngine) CheckIsGood() (ok bool, err error) {
 		for _, data := range cellule.Datas {
 			if data.IsFlag {
 				cia.Status.FlagFound = true
-				ok = false
 			}
 		}
 	}
@@ -691,6 +695,19 @@ func (cia *CiaEngine) Action(ciaCode CIA) (err error) {
 			default:
 				break
 			}
+		case "active":
+			if cia.Status.ShellCode {
+				tools.PrintShellCodeData(cia.Mem.ShellCodeTarget)
+				for _, shellCodeTarget := range cia.Mem.ShellCodeTarget {
+					if shellCodeTarget.BlueTeam && cia.Api.TeamBlue {
+						tools.Warning("target blue team")
+					} else {
+						tools.Fail(fmt.Sprintf("active shellcode target [%s]", shellCodeTarget.PID))
+						cia.Algo.ActiveShellCode(shellCodeTarget.PID, shellCodeTarget.Shellcode)
+					}
+				}
+			}
+			break
 		default:
 			err = errors.New("action not found")
 			return
