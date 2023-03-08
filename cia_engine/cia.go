@@ -140,12 +140,19 @@ func (cia *CiaEngine) Run() (err error) {
 	cia.Algo.ExplorationStop()
 	for _, zone := range cia.Algo.InfosGrid.Zones {
 		if zone.Status {
-			tools.Title(fmt.Sprintf("Zone [%d][%d]", zone.SecteurID, zone.ZoneID))
 			count := len(cia.LoopCIA.LoopCode)
+			tools.Title(fmt.Sprintf("Zone [%d][%d] - cia [%d]", zone.SecteurID, zone.ZoneID, count))
 			cia.Next = true
 			for i := 0; i < count; i++ {
+				tools.Info(fmt.Sprintf(
+					"cia [%s] [%s] [%s]",
+					cia.LoopCIA.LoopCode[i].Commande,
+					cia.LoopCIA.LoopCode[i].Instruction,
+					cia.LoopCIA.LoopCode[i].Action,
+				))
 				forceNext := false
 				if cia.Next == false {
+					tools.Warning("next false stop current cia")
 					break
 				}
 				cia.Next = false
@@ -201,15 +208,24 @@ func (cia *CiaEngine) Run() (err error) {
 				case "rebuild":
 					if cia.Status.Rebuild && cia.LoopCIA.LoopParams.Rebuild {
 						ok = true
+					} else {
+						ok = true
+						forceNext = true
 					}
 					break
 				case "attack":
 					if cia.LoopCIA.LoopParams.Attack {
 						cia.Status.Attack = true
 						ok = true
+					} else {
+						ok = true
+						forceNext = true
 					}
 					break
 				case "shellcode":
+					cia.Status.ShellCode = true
+					forceNext = true
+					ok = true
 					break
 				default:
 					err = errors.New("commande not found")
@@ -220,9 +236,6 @@ func (cia *CiaEngine) Run() (err error) {
 						err = errors.New("erreur run commande")
 					}
 					return
-				}
-				if forceNext {
-					cia.Next = false
 				}
 				instructionSplit := strings.Split(ciaCode.Instruction, "-")
 				tools.Info(fmt.Sprintf("instruction-split = [%v]", instructionSplit))
@@ -259,6 +272,11 @@ func (cia *CiaEngine) Run() (err error) {
 						}
 					}
 					break
+				case "active":
+					if cia.Status.ShellCode {
+						// TODO active shellcode + add to Mem
+					}
+					break
 				default:
 					err = errors.New("instruction not found")
 					break
@@ -271,6 +289,7 @@ func (cia *CiaEngine) Run() (err error) {
 					return
 				}
 				if forceNext {
+					cia.Next = true
 					tools.Warning("force next")
 				} else {
 					err = cia.Action(ciaCode)
@@ -650,7 +669,7 @@ func (cia *CiaEngine) Action(ciaCode CIA) (err error) {
 			}
 			break
 		case "attack":
-			condition := actionSplit[2]
+			condition := actionSplit[1]
 			switch condition {
 			case "max":
 				for _, targetID := range cia.Mem.Targets {
