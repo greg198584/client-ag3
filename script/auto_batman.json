@@ -11,10 +11,9 @@
       "stop": false,
       "random": true,
       "energy_seuil": 10,
-      "rebuild": false,
-      "attack": false,
-      "shellcode": false,
-      "flag_found": false
+      "rebuild": true,
+      "attack": true,
+      "shellcode": false
     },
     "loop_code": [
       {
@@ -58,6 +57,21 @@
             }
           ]
         }
+      },
+      {
+        "commande": "rebuild",
+        "instruction": "check-cellule-valeur",
+        "action": "rebuild,next"
+      },
+      {
+        "commande": "attack",
+        "instruction": "check-cellule-log",
+        "action": "attack-max,next"
+      },
+      {
+        "commande": "shellcode",
+        "instruction": "active-shellcode-save",
+        "action": "active-shellcode, next"
       },
       {
         "commande": "scan",

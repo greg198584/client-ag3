@@ -94,8 +94,6 @@ func New(name string) (cia *CiaEngine, err error) {
 		return
 	}
 	cia.ScriptName = name
-	cia.Mem.MaxValeurCellule = (cia.Algo.Psi.Programme.Level * algo.MAX_VALEUR) * algo.MAX_CELLULES
-	cia.Mem.MaxEnergyCellule = ((cia.Algo.Psi.Programme.Level * algo.MAX_VALEUR) * algo.MAX_CELLULES) * 10
 	return
 }
 func NewFromSpeedCode(speedCode string) (cia *CiaEngine, err error) {
@@ -137,6 +135,8 @@ func (cia *CiaEngine) Run() (err error) {
 			return
 		}
 	}
+	cia.Mem.MaxValeurCellule = (cia.Algo.Psi.Programme.Level * algo.MAX_VALEUR) * algo.MAX_CELLULES
+	cia.Mem.MaxEnergyCellule = ((cia.Algo.Psi.Programme.Level * algo.MAX_VALEUR) * algo.MAX_CELLULES) * 10
 	for _, zone := range cia.Algo.InfosGrid.Zones {
 		if zone.Status {
 			tools.Title(fmt.Sprintf("Zone [%d][%d]", zone.SecteurID, zone.ZoneID))
