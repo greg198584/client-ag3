@@ -270,9 +270,14 @@ func (cia *CiaEngine) Run() (err error) {
 					err = errors.New("need action")
 					return
 				}
-				err = cia.Action(ciaCode)
-				if err != nil {
-					return
+				if forceNext {
+					tools.Warning("force next")
+				} else {
+					err = cia.Action(ciaCode)
+					if err != nil {
+						return
+					}
+					tools.Success(fmt.Sprintf("End action %s - %s", ciaCode.Commande, ciaCode.Action))
 				}
 			}
 		}
@@ -464,6 +469,7 @@ func (cia *CiaEngine) RunCode(ciaCode CiaCode) (err error) {
 		}
 		cia.ActionCode(currentCia.Action, celluleDataList, ActionTrapped, ActionCaptureFlag)
 	}
+	cia.Algo.GetInfosProgramme()
 	cia.Algo.CleanLogAll()
 	cia.Algo.Equilibrium()
 	cia.Algo.ExplorationStop()
@@ -534,6 +540,7 @@ func (cia *CiaEngine) CheckIsGood() (ok bool, err error) {
 		seuilEnergy,
 		cia.Status.Energy,
 	))
+	cia.Status.FlagFound = false
 	for _, cellule := range cia.Algo.Psi.Programme.Cellules {
 		for _, data := range cellule.Datas {
 			if data.IsFlag {

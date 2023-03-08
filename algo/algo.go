@@ -596,7 +596,7 @@ func (a *Algo) ActiveCaptureFlag(Flag string) (ok bool, err error) {
 func (a *Algo) GetLog(celluleID int) (celluleLogs map[int]structure.CelluleLog, err error) {
 	res, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s/%s", a.ApiUrl, api.ROUTE_GET_CELLULE_LOG, a.Pc.ID, a.Pc.SecretID, celluleID),
+		fmt.Sprintf("%s/%s/%s/%s/%d", a.ApiUrl, api.ROUTE_GET_CELLULE_LOG, a.Pc.ID, a.Pc.SecretID, celluleID),
 		nil,
 	)
 	if err != nil {
@@ -618,10 +618,12 @@ func (a *Algo) CleanLog(celluleID int) (err error) {
 	return
 }
 func (a *Algo) CleanLogAll() (err error) {
-	for i := 0; i < MAX_CELLULES; i++ {
-		err = a.CleanLog(i)
-		if err != nil {
-			return
+	for _, cellule := range a.Psi.Programme.Cellules {
+		if cellule.Exploration {
+			err = a.CleanLog(cellule.ID)
+			if err != nil {
+				return
+			}
 		}
 	}
 	return
