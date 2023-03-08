@@ -90,7 +90,7 @@ func _randomFilename(n int) string {
 		}
 		Filename = hex.EncodeToString(bytes) + ".log"
 	}
-	return Filename
+	return "./log/" + Filename
 }
 func _printFileLog(logMsg string) {
 	if FILE_LOG {

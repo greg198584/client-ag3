@@ -1,6 +1,7 @@
 {
   "programme_name": "joker",
   "auto_connect": true,
+  "error_seuil": 10,
   "api": {
     "url": "http://localhost:20180",
     "team_blue": false,

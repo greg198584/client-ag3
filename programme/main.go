@@ -440,8 +440,7 @@ func RunCIA(name string) {
 		for {
 			err = current.Run()
 			if err != nil {
-				tools.Fail(err.Error())
-				return
+				tools.Fail(fmt.Sprintf("main run error > [%s]", err.Error()))
 			}
 			if current.LoopCIA.LoopParams.Stop {
 				break

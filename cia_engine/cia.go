@@ -7,21 +7,24 @@ import (
 	"github.com/greg198584/client-ag3/algo"
 	"github.com/greg198584/client-ag3/structure"
 	"github.com/greg198584/client-ag3/tools"
+	"net/http"
 	"strings"
 	"time"
 )
 
 type CiaEngine struct {
-	Algo          *algo.Algo
-	ScriptName    string        `json:"script_name"`
-	ProgrammeName string        `json:"programme_name"`
-	AutoConnect   bool          `json:"auto_connect"`
-	ZoneActif     bool          `json:"zone_actif"`
-	Api           Api           `json:"api"`
-	LoopCIA       LoopCia       `json:"loop_cia"`
-	Next          bool          `json:"next"`
-	Status        Status        `json:"status"`
-	Mem           GrilleZoneMem `json:"mem"`
+	Algo           *algo.Algo
+	ScriptName     string        `json:"script_name"`
+	ProgrammeName  string        `json:"programme_name"`
+	AutoConnect    bool          `json:"auto_connect"`
+	ZoneActif      bool          `json:"zone_actif"`
+	ErrorSeuil     int           `json:"error_seuil"`
+	Api            Api           `json:"api"`
+	LoopCIA        LoopCia       `json:"loop_cia"`
+	Next           bool          `json:"next"`
+	Status         Status        `json:"status"`
+	Mem            GrilleZoneMem `json:"mem"`
+	ConnexionError int           `json:"connexion_error"`
 }
 
 type GrilleZoneMem struct {
@@ -108,6 +111,7 @@ func NewFromSpeedCode(speedCode string) (cia *CiaEngine, err error) {
 }
 func (cia *CiaEngine) Run() (err error) {
 	tools.Info(fmt.Sprintf("Run script [%s] - programme [%s]", cia.ScriptName, cia.ProgrammeName))
+	time.Sleep(algo.TIME_MILLISECONDE * time.Millisecond)
 	cia.Mem.Targets = []string{}
 	if cia.Api.TeamBlue {
 		cia.Algo, err = algo.NewAlgoBlueTeam(cia.ProgrammeName, cia.Api.Url)
@@ -140,6 +144,23 @@ func (cia *CiaEngine) Run() (err error) {
 	cia.Mem.MaxEnergyCellule = ((cia.Algo.Psi.Programme.Level * algo.MAX_VALEUR) * algo.MAX_CELLULES) * 10
 	cia.Algo.ExplorationStop()
 	for _, zone := range cia.Algo.InfosGrid.Zones {
+		if cia.Algo.StatusCode == http.StatusUnauthorized {
+			cia.ConnexionError++
+			tools.Fail(fmt.Sprintf("add http error 401 - nbr error 401 [%d]", cia.ConnexionError))
+		}
+		if cia.ConnexionError == cia.ErrorSeuil {
+			if cia.AutoConnect {
+				if ok, errLoad := cia.Algo.LoadProgramme(cia.Api.TeamBlue); !ok {
+					err = errLoad
+					return
+				}
+			}
+			if ok, errInfo := cia.Algo.GetInfosProgramme(); !ok {
+				err = errInfo
+				return
+			}
+			cia.ConnexionError = 0
+		}
 		if zone.Status {
 			if zone.Actif == false && cia.ZoneActif {
 				continue
@@ -147,6 +168,7 @@ func (cia *CiaEngine) Run() (err error) {
 			count := len(cia.LoopCIA.LoopCode)
 			tools.Title(fmt.Sprintf("Zone [%d][%d] - cia [%d]", zone.SecteurID, zone.ZoneID, count))
 			cia.Next = true
+			time.Sleep(algo.TIME_MILLISECONDE * time.Millisecond)
 			for i := 0; i < count; i++ {
 				tools.Info(fmt.Sprintf(
 					"cia [%s] [%s] [%s]",
@@ -170,7 +192,7 @@ func (cia *CiaEngine) Run() (err error) {
 				ok := false
 				switch ciaCode.Commande {
 				case "move":
-					if cia.Algo.Psi.Navigation {
+					if cia.Algo.Psi.Navigation || cia.Algo.Psi.Programme.Exploration {
 						ok = true
 						break
 					}
@@ -251,23 +273,30 @@ func (cia *CiaEngine) Run() (err error) {
 				}
 				switch instructionSplit[0] {
 				case "wait":
+					tools.Title("wait")
 					err = cia.Wait(instructionSplit[1], instructionSplit[2])
 					break
 				case "loop":
+					tools.Title("loop")
 					err = cia.Loop(ciaCode.Code, instructionSplit[1], instructionSplit[2])
 					break
 				case "nop":
+					tools.Title("nop")
 					break
 				case "check":
+					tools.Title("check")
 					if cia.Status.Rebuild {
+						cia.Mem.Cellules = make(map[int]*structure.Cellule)
+						tools.Warning("> rebuild")
 						for _, cellule := range cia.Algo.Psi.Programme.Cellules {
 							if cellule.Status == false {
 								cia.Mem.Cellules[cellule.ID] = cellule
-								cia.Mem.Cellules[cellule.ID].Energy = cia.Mem.MaxValeurCellule - cellule.Valeur + 1
+								cia.Mem.Cellules[cellule.ID].Energy = (cia.Mem.MaxValeurCellule / 4) - cellule.Valeur + 1
 							}
 						}
 					}
 					if cia.Status.Attack {
+						tools.Warning("> attack")
 						for celluleID := 0; celluleID < algo.MAX_CELLULES; celluleID++ {
 							cia.Algo.Explore(celluleID)
 							logs, _ := cia.Algo.GetLog(celluleID)
@@ -673,14 +702,17 @@ func (cia *CiaEngine) Action(ciaCode CIA) (err error) {
 			err = cia.RunCode(ciaCode.Code)
 			break
 		case "rebuild":
+			tools.Warning("\n\t ---> REBUILD ...\n")
 			for _, cellule := range cia.Mem.Cellules {
-				ok, _, _ := cia.Algo.Rebuild(cellule.ID, cia.Algo.ID, cellule.Energy)
+				tools.Info(fmt.Sprintf("\n\t\tcellule id [%d] [%d] [%d]\n", cellule.ID, cellule.Valeur, cellule.Energy))
+				ok, _, _ := cia.Algo.Rebuild(cellule.ID, cia.Algo.Psi.Programme.ID, cellule.Energy)
 				if ok {
 					delete(cia.Mem.Cellules, cellule.ID)
 				}
 			}
 			break
 		case "attack":
+			tools.Warning("\n\t ---> ATTACK ...\n")
 			condition := actionSplit[1]
 			switch condition {
 			case "max":
@@ -696,6 +728,7 @@ func (cia *CiaEngine) Action(ciaCode CIA) (err error) {
 				break
 			}
 		case "active":
+			tools.Warning("\n\t ---> ACTIVE SHELLCODE ...\n")
 			if cia.Status.ShellCode {
 				tools.PrintShellCodeData(cia.Mem.ShellCodeTarget)
 				for _, shellCodeTarget := range cia.Mem.ShellCodeTarget {

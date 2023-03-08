@@ -2,6 +2,7 @@
   "programme_name": "batman",
   "auto_connect": true,
   "zone_actif": false,
+  "error_seuil": 10,
   "api": {
     "url": "http://localhost:20180",
     "team_blue": true,
