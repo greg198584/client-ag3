@@ -137,6 +137,7 @@ func (cia *CiaEngine) Run() (err error) {
 	}
 	cia.Mem.MaxValeurCellule = (cia.Algo.Psi.Programme.Level * algo.MAX_VALEUR) * algo.MAX_CELLULES
 	cia.Mem.MaxEnergyCellule = ((cia.Algo.Psi.Programme.Level * algo.MAX_VALEUR) * algo.MAX_CELLULES) * 10
+	cia.Algo.ExplorationStop()
 	for _, zone := range cia.Algo.InfosGrid.Zones {
 		if zone.Status {
 			tools.Title(fmt.Sprintf("Zone [%d][%d]", zone.SecteurID, zone.ZoneID))

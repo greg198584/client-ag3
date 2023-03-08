@@ -609,7 +609,7 @@ func (a *Algo) GetLog(celluleID int) (celluleLogs map[int]structure.CelluleLog, 
 func (a *Algo) CleanLog(celluleID int) (err error) {
 	_, statusCode, err := api.RequestApi(
 		"GET",
-		fmt.Sprintf("%s/%s/%s/%s/%s", a.ApiUrl, api.ROUTE_CLEAN_CELLULE_LOG, a.Pc.ID, a.Pc.SecretID, celluleID),
+		fmt.Sprintf("%s/%s/%s/%s/%d", a.ApiUrl, api.ROUTE_CLEAN_CELLULE_LOG, a.Pc.ID, a.Pc.SecretID, celluleID),
 		nil,
 	)
 	if err != nil {
