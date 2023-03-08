@@ -19,7 +19,7 @@
       {
         "commande": "move",
         "instruction": "wait-navigation-false",
-        "action": "code,stop-is-good",
+        "action": "code,stop-isnot-good",
         "code": {
           "name": "search-flag",
           "good": "",

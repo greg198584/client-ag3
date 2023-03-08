@@ -638,17 +638,25 @@ func (cia *CiaEngine) Action(ciaCode CIA) (err error) {
 				condition := actionSplit[2]
 				switch condition {
 				case "good":
-					if ok, errCheck := cia.CheckIsGood(); !ok {
-						err = errCheck
-						switch actionSplit[1] {
-						case "is":
+					ok, errCheck := cia.CheckIsGood()
+					err = errCheck
+					switch actionSplit[1] {
+					case "is":
+						if ok {
 							cia.Next = true
-							break
-						case "isnot":
-							break
-						default:
-							break
+						} else {
+							cia.Next = false
 						}
+						break
+					case "isnot":
+						if ok {
+							cia.Next = false
+						} else {
+							cia.Next = true
+						}
+						break
+					default:
+						break
 					}
 					break
 				default:
