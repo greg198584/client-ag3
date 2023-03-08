@@ -341,21 +341,12 @@ func GetCelluleLog(name string, apiteam string, celluleID string) {
 	if err != nil {
 		//panic(err)
 	}
-	res, statusCode, err := api.RequestApi(
-		"GET",
-		fmt.Sprintf("%s/%s/%s/%s/%s", current.ApiUrl, api.ROUTE_GET_CELLULE_LOG, current.Pc.ID, current.Pc.SecretID, celluleID),
-		nil,
-	)
+	ID, _ := strconv.Atoi(celluleID)
+	celluleLog, err := current.GetLog(ID)
 	if err != nil {
-		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
+		tools.Fail(err.Error())
 	} else {
-		var celluleLogs map[int]structure.CelluleLog
-		err = json.Unmarshal(res, &celluleLogs)
-		if err != nil {
-			tools.Fail(err.Error())
-		} else {
-			tools.PrintCelluleLogs(celluleLogs)
-		}
+		tools.PrintCelluleLogs(celluleLog)
 	}
 	return
 }
@@ -365,14 +356,9 @@ func CleanCelluleLog(name string, apiteam string, celluleID string) {
 	if err != nil {
 		//panic(err)
 	}
-	_, statusCode, err := api.RequestApi(
-		"GET",
-		fmt.Sprintf("%s/%s/%s/%s/%s", current.ApiUrl, api.ROUTE_CLEAN_CELLULE_LOG, current.Pc.ID, current.Pc.SecretID, celluleID),
-		nil,
-	)
-	if err != nil {
-		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
-	} else {
+	ID, _ := strconv.Atoi(celluleID)
+	err = current.CleanLog(ID)
+	if err == nil {
 		tools.Success("clean cellule")
 	}
 	return

@@ -13,13 +13,22 @@ import (
 
 type CiaEngine struct {
 	Algo          *algo.Algo
-	ScriptName    string  `json:"script_name"`
-	ProgrammeName string  `json:"programme_name"`
-	AutoConnect   bool    `json:"auto_connect"`
-	Api           Api     `json:"api"`
-	LoopCIA       LoopCia `json:"loop_cia"`
-	Next          bool    `json:"next"`
-	Status        Status  `json:"status"`
+	ScriptName    string        `json:"script_name"`
+	ProgrammeName string        `json:"programme_name"`
+	AutoConnect   bool          `json:"auto_connect"`
+	Api           Api           `json:"api"`
+	LoopCIA       LoopCia       `json:"loop_cia"`
+	Next          bool          `json:"next"`
+	Status        Status        `json:"status"`
+	Mem           GrilleZoneMem `json:"mem"`
+}
+
+type GrilleZoneMem struct {
+	ZoneInfos        structure.ZoneInfos
+	Targets          []string
+	Cellules         map[int]*structure.Cellule
+	MaxValeurCellule int
+	MaxEnergyCellule int
 }
 
 type Status struct {
@@ -60,7 +69,6 @@ type LoopParams struct {
 	Rebuild     bool `json:"rebuild"`
 	Attack      bool `json:"attack"`
 	ShellCode   bool `json:"shellcode"`
-	FlagFound   bool `json:"flag_found"`
 }
 type CelluleDataList struct {
 	CelluleID   int
@@ -86,6 +94,8 @@ func New(name string) (cia *CiaEngine, err error) {
 		return
 	}
 	cia.ScriptName = name
+	cia.Mem.MaxValeurCellule = (cia.Algo.Psi.Programme.Level * algo.MAX_VALEUR) * algo.MAX_CELLULES
+	cia.Mem.MaxEnergyCellule = ((cia.Algo.Psi.Programme.Level * algo.MAX_VALEUR) * algo.MAX_CELLULES) * 10
 	return
 }
 func NewFromSpeedCode(speedCode string) (cia *CiaEngine, err error) {
@@ -98,6 +108,7 @@ func NewFromSpeedCode(speedCode string) (cia *CiaEngine, err error) {
 }
 func (cia *CiaEngine) Run() (err error) {
 	tools.Info(fmt.Sprintf("Run script [%s] - programme [%s]", cia.ScriptName, cia.ProgrammeName))
+	cia.Mem.Targets = []string{}
 	if cia.Api.TeamBlue {
 		cia.Algo, err = algo.NewAlgoBlueTeam(cia.ProgrammeName, cia.Api.Url)
 	} else {
@@ -144,7 +155,6 @@ func (cia *CiaEngine) Run() (err error) {
 					ciaCode.Instruction,
 					ciaCode.Action,
 				))
-				var zoneInfos structure.ZoneInfos
 				ok := false
 				switch ciaCode.Commande {
 				case "move":
@@ -160,7 +170,7 @@ func (cia *CiaEngine) Run() (err error) {
 						err = errScan
 						break
 					}
-					err = json.Unmarshal(res, &zoneInfos)
+					err = json.Unmarshal(res, &cia.Mem.ZoneInfos)
 					if err != nil {
 						break
 					}
@@ -183,6 +193,19 @@ func (cia *CiaEngine) Run() (err error) {
 						forceNext = true
 					}
 					ok = true
+				case "rebuild":
+					if cia.Status.Rebuild && cia.LoopCIA.LoopParams.Rebuild {
+						ok = true
+					}
+					break
+				case "attack":
+					if cia.LoopCIA.LoopParams.Attack {
+						cia.Status.Attack = true
+						ok = true
+					}
+					break
+				case "shellcode":
+					break
 				default:
 					err = errors.New("commande not found")
 					return
@@ -207,9 +230,29 @@ func (cia *CiaEngine) Run() (err error) {
 					err = cia.Wait(instructionSplit[1], instructionSplit[2])
 					break
 				case "loop":
-					err = cia.Loop(ciaCode.Code, instructionSplit[1], instructionSplit[2], zoneInfos)
+					err = cia.Loop(ciaCode.Code, instructionSplit[1], instructionSplit[2])
 					break
 				case "nop":
+					break
+				case "check":
+					if cia.Status.Rebuild {
+						for _, cellule := range cia.Algo.Psi.Programme.Cellules {
+							if cellule.Status == false {
+								cia.Mem.Cellules[cellule.ID] = cellule
+								cia.Mem.Cellules[cellule.ID].Energy = cia.Mem.MaxValeurCellule - cellule.Valeur + 1
+							}
+						}
+					}
+					if cia.Status.Attack {
+						for celluleID := 0; celluleID < algo.MAX_CELLULES; celluleID++ {
+							cia.Algo.Explore(celluleID)
+							logs, _ := cia.Algo.GetLog(celluleID)
+							for _, log := range logs {
+								cia.Mem.Targets = append(cia.Mem.Targets, log.PID)
+							}
+
+						}
+					}
 					break
 				default:
 					err = errors.New("instruction not found")
@@ -231,16 +274,21 @@ func (cia *CiaEngine) Run() (err error) {
 	}
 	return
 }
-func (cia *CiaEngine) Loop(ciaCode CiaCode, value string, condition string, zoneInfos structure.ZoneInfos) (err error) {
+func (cia *CiaEngine) Loop(ciaCode CiaCode, value string, condition string) (err error) {
 	tools.Title("Loop")
 	if ciaCode.Good == "energy_seuil" && !cia.Status.Energy {
 		return
 	}
 	switch value {
 	case "cellule":
-		for _, cellule := range zoneInfos.Cellules {
-			if condition == "code" {
+		for _, cellule := range cia.Mem.ZoneInfos.Cellules {
+			switch condition {
+			case "code":
 				err = cia.RunCodeCellule(ciaCode, cellule)
+				break
+			default:
+				err = errors.New("erreur condition instruction")
+				break
 			}
 			if err != nil {
 				break
@@ -310,6 +358,7 @@ func (cia *CiaEngine) RunCodeCellule(ciaCode CiaCode, cellule structure.CelluleI
 			return
 		}
 	}
+	cia.Algo.CleanLogAll()
 	cia.Algo.Equilibrium()
 	cia.Algo.ExplorationStop()
 	return
@@ -410,6 +459,7 @@ func (cia *CiaEngine) RunCode(ciaCode CiaCode) (err error) {
 		}
 		cia.ActionCode(currentCia.Action, celluleDataList, ActionTrapped, ActionCaptureFlag)
 	}
+	cia.Algo.CleanLogAll()
 	cia.Algo.Equilibrium()
 	cia.Algo.ExplorationStop()
 	return
@@ -460,8 +510,8 @@ func (cia *CiaEngine) CheckIsGood() (ok bool, err error) {
 		energyTotal += cellule.Energy
 		valeurTotal += cellule.Valeur
 	}
-	seuilValeur := (cia.Algo.Psi.Programme.Level * algo.MAX_VALEUR) * algo.MAX_CELLULES
-	seuilEnergy := ((cia.Algo.Psi.Programme.Level * algo.MAX_VALEUR) * algo.MAX_CELLULES) * 10
+	seuilValeur := cia.Mem.MaxValeurCellule
+	seuilEnergy := cia.Mem.MaxEnergyCellule
 	if valeurTotal < seuilValeur {
 		cia.Status.Rebuild = true
 		ok = false
@@ -579,6 +629,29 @@ func (cia *CiaEngine) Action(ciaCode CIA) (err error) {
 		case "code":
 			err = cia.RunCode(ciaCode.Code)
 			break
+		case "rebuild":
+			for _, cellule := range cia.Mem.Cellules {
+				ok, _, _ := cia.Algo.Rebuild(cellule.ID, cia.Algo.ID, cellule.Energy)
+				if ok {
+					delete(cia.Mem.Cellules, cellule.ID)
+				}
+			}
+			break
+		case "attack":
+			condition := actionSplit[2]
+			switch condition {
+			case "max":
+				for _, targetID := range cia.Mem.Targets {
+					for _, cellule := range cia.Algo.Psi.Programme.Cellules {
+						if cellule.Status {
+							cia.Algo.Destroy(cellule.ID, targetID, cellule.Valeur)
+						}
+					}
+				}
+				break
+			default:
+				break
+			}
 		default:
 			err = errors.New("action not found")
 			return

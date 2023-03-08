@@ -593,3 +593,36 @@ func (a *Algo) ActiveCaptureFlag(Flag string) (ok bool, err error) {
 	}
 	return
 }
+func (a *Algo) GetLog(celluleID int) (celluleLogs map[int]structure.CelluleLog, err error) {
+	res, statusCode, err := api.RequestApi(
+		"GET",
+		fmt.Sprintf("%s/%s/%s/%s/%s", a.ApiUrl, api.ROUTE_GET_CELLULE_LOG, a.Pc.ID, a.Pc.SecretID, celluleID),
+		nil,
+	)
+	if err != nil {
+		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
+	} else {
+		err = json.Unmarshal(res, &celluleLogs)
+	}
+	return
+}
+func (a *Algo) CleanLog(celluleID int) (err error) {
+	_, statusCode, err := api.RequestApi(
+		"GET",
+		fmt.Sprintf("%s/%s/%s/%s/%s", a.ApiUrl, api.ROUTE_CLEAN_CELLULE_LOG, a.Pc.ID, a.Pc.SecretID, celluleID),
+		nil,
+	)
+	if err != nil {
+		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
+	}
+	return
+}
+func (a *Algo) CleanLogAll() (err error) {
+	for i := 0; i < MAX_CELLULES; i++ {
+		err = a.CleanLog(i)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
