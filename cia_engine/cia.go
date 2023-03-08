@@ -159,6 +159,10 @@ func (cia *CiaEngine) Run() (err error) {
 				ok := false
 				switch ciaCode.Commande {
 				case "move":
+					if cia.Algo.Psi.Navigation {
+						ok = true
+						break
+					}
 					if cia.Api.TeamBlue {
 						ok, err = cia.Algo.QuickMove(fmt.Sprintf("%d", zone.SecteurID), fmt.Sprintf("%d", zone.ZoneID))
 					} else {
