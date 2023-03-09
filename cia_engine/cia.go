@@ -141,7 +141,7 @@ func (cia *CiaEngine) Run() (err error) {
 		return
 	}
 	cia.Mem.MaxValeurCellule = (cia.Algo.Psi.Programme.Level * algo.MAX_VALEUR) * algo.MAX_CELLULES
-	cia.Mem.MaxEnergyCellule = ((cia.Algo.Psi.Programme.Level * algo.MAX_VALEUR) * algo.MAX_CELLULES) * 10
+	cia.Mem.MaxEnergyCellule = ((cia.Algo.Psi.Programme.Level * algo.MAX_VALEUR) * algo.MAX_CELLULES) * 2
 	cia.Algo.ExplorationStop()
 	for _, zone := range cia.Algo.InfosGrid.Zones {
 		if cia.Algo.StatusCode == http.StatusUnauthorized {

@@ -282,10 +282,11 @@ func main() {
 	})
 	app.Command("cia", "run script cia (commande-instruction-action)", func(cmd *mowcli.Cmd) {
 		var (
-			scriptName = cmd.StringOpt("n name", "", "nom du script")
+			scriptBlue = cmd.StringOpt("b blue", "", "nom du script team blue")
+			scriptRed  = cmd.StringOpt("r red", "", "nom du script team red")
 		)
 		cmd.Action = func() {
-			programme.RunCIA(*scriptName)
+			programme.RunCIA(*scriptBlue, *scriptRed)
 		}
 	})
 	app.Action = func() {

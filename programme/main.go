@@ -432,10 +432,11 @@ func ActiveCaptureFlag(name string, apiteam string, Flag string) {
 		current.ActiveCaptureFlag(Flag)
 	}
 }
-func RunCIA(name string) {
-	current, err := cia_engine.New(name)
+func _RunGoRoutineCIA(ch chan bool, script string) {
+	current, err := cia_engine.New(script)
 	if err != nil {
 		tools.Fail(err.Error())
+		return
 	} else {
 		for {
 			err = current.Run()
@@ -448,4 +449,16 @@ func RunCIA(name string) {
 		}
 		tools.Success("end script")
 	}
+	ch <- true
+}
+func RunCIA(scriptBlue string, scriptRed string) {
+	start_time := time.Now()
+
+	ch := make(chan bool)
+	go _RunGoRoutineCIA(ch, scriptBlue)
+	go _RunGoRoutineCIA(ch, scriptRed)
+	tools.Success(fmt.Sprintf("status channel [%t]", <-ch))
+	tools.Success(fmt.Sprintf("status channel [%t]", <-ch))
+	end_time := time.Now()
+	tools.Success(fmt.Sprintf("end execution [%v]", end_time.Sub(start_time)))
 }
