@@ -196,11 +196,12 @@ func (cia *CiaEngine) Run() (err error) {
 						ok = true
 						break
 					}
-					if cia.Api.TeamBlue {
-						ok, err = cia.Algo.QuickMove(fmt.Sprintf("%d", zone.SecteurID), fmt.Sprintf("%d", zone.ZoneID))
-					} else {
-						ok, err = cia.Algo.Move(fmt.Sprintf("%d", zone.SecteurID), fmt.Sprintf("%d", zone.ZoneID))
-					}
+					ok, err = cia.Algo.QuickMove(fmt.Sprintf("%d", zone.SecteurID), fmt.Sprintf("%d", zone.ZoneID))
+					//if cia.Api.TeamBlue {
+					//	ok, err = cia.Algo.QuickMove(fmt.Sprintf("%d", zone.SecteurID), fmt.Sprintf("%d", zone.ZoneID))
+					//} else {
+					//	ok, err = cia.Algo.Move(fmt.Sprintf("%d", zone.SecteurID), fmt.Sprintf("%d", zone.ZoneID))
+					//}
 					break
 				case "scan":
 					_, res, errScan := cia.Algo.Scan()
@@ -216,17 +217,21 @@ func (cia *CiaEngine) Run() (err error) {
 					break
 				case "move_zt":
 					if cia.Status.FlagFound {
-						if cia.Api.TeamBlue {
-							ok, err = cia.Algo.QuickMove(
-								fmt.Sprintf("%d", cia.Algo.InfosGrid.ZoneTransfert.SecteurID),
-								fmt.Sprintf("%d", cia.Algo.InfosGrid.ZoneTransfert.ZoneID),
-							)
-						} else {
-							ok, err = cia.Algo.Move(
-								fmt.Sprintf("%d", cia.Algo.InfosGrid.ZoneTransfert.SecteurID),
-								fmt.Sprintf("%d", cia.Algo.InfosGrid.ZoneTransfert.ZoneID),
-							)
-						}
+						ok, err = cia.Algo.QuickMove(
+							fmt.Sprintf("%d", cia.Algo.InfosGrid.ZoneTransfert.SecteurID),
+							fmt.Sprintf("%d", cia.Algo.InfosGrid.ZoneTransfert.ZoneID),
+						)
+						//if cia.Api.TeamBlue {
+						//	ok, err = cia.Algo.QuickMove(
+						//		fmt.Sprintf("%d", cia.Algo.InfosGrid.ZoneTransfert.SecteurID),
+						//		fmt.Sprintf("%d", cia.Algo.InfosGrid.ZoneTransfert.ZoneID),
+						//	)
+						//} else {
+						//	ok, err = cia.Algo.Move(
+						//		fmt.Sprintf("%d", cia.Algo.InfosGrid.ZoneTransfert.SecteurID),
+						//		fmt.Sprintf("%d", cia.Algo.InfosGrid.ZoneTransfert.ZoneID),
+						//	)
+						//}
 					} else {
 						forceNext = true
 					}
