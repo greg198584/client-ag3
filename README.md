@@ -92,10 +92,11 @@ Commands:
   shellcode          generate shellcode sur programmme present sur zone
   active_shellcode   activer un shellcode sur un programme
   acf                [blueteam] activer capture flag sur zone de transfert
-
+  cia                run script cia (commande-instruction-action)
                      
 Run 'main COMMAND --help' for more information on a command.
 ```
+
 ### Routes constanstes CLIENT
 
 ```
@@ -215,6 +216,29 @@ Run 'main COMMAND --help' for more information on a command.
     "path": "GET /v1/active/shellcode/:id/:secretid/:target_id/:shellcode",
   }
 ]
+```
+### Exemple Usage Script C-I-A 
+
+[red_batman](script/red_batman.json).
+[blue_batman](script/blue_batman.json).
+
+- auto creation programme ( change le nom du programme )
+
+```
+> $ ./client-ag3 cia --help
+
+Usage: main cia [OPTIONS]
+
+run script cia (commande-instruction-action)
+               
+Options:       
+  -b, --blue   nom du script team blue
+  -r, --red    nom du script team red
+
+```
+
+```
+./client-ag3 cia -b blue_batman -r red_batman  
 ```
 
 ### create programme
