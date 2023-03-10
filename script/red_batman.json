@@ -3,7 +3,7 @@
   "auto_connect": true,
   "error_seuil": 10,
   "api": {
-    "url": "http://localhost:20190",
+    "url": "http://195.154.84.18:20190",
     "team_blue": false,
     "team_red": true
   },
