@@ -1,11 +1,20 @@
 package tools
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"fmt"
 	"github.com/logrusorgru/aurora"
 	"github.com/olekukonko/tablewriter"
 	"log"
 	"os"
 )
+
+const (
+	FILE_LOG = true
+)
+
+var Filename string
 
 func PrintColorTable(header []string, dataList [][]string, title_opt ...string) {
 	if len(title_opt) == 1 {
@@ -73,6 +82,29 @@ func PrintColorTableNoBorder(header []string, dataList [][]string, title_opt ...
 	table.Render()
 }
 
+func _randomFilename(n int) string {
+	if Filename == "" {
+		bytes := make([]byte, n)
+		if _, err := rand.Read(bytes); err != nil {
+			panic(err)
+		}
+		Filename = hex.EncodeToString(bytes) + ".log"
+	}
+	return "./log/" + Filename
+}
+func _printFileLog(logMsg string) {
+	if FILE_LOG {
+		f, err := os.OpenFile(_randomFilename(10), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		defer f.Close()
+		if _, err := f.WriteString(logMsg + "\n"); err != nil {
+			log.Println(err)
+		}
+	}
+}
 func Title(title string) {
 	log.Printf("[%s]", aurora.Magenta(title))
 }
@@ -84,7 +116,9 @@ func Info(message string, tab ...bool) {
 			isTab = "\t"
 		}
 	}
-	log.Printf("%s[%s] [%s]", isTab, aurora.Blue(">>>"), aurora.Cyan(message))
+	logMsg := fmt.Sprintf("%s[%s] [%s]", isTab, aurora.Blue(">>>"), aurora.Cyan(message))
+	log.Println(logMsg)
+	_printFileLog(logMsg)
 }
 
 func Success(message string, tab ...bool) {
@@ -94,7 +128,10 @@ func Success(message string, tab ...bool) {
 			isTab = "\t"
 		}
 	}
-	log.Printf("%s[%s] [%s] [%s]", isTab, aurora.Green("+"), aurora.Yellow(message), aurora.Green("OK"))
+
+	logMsg := fmt.Sprintf("%s[%s] [%s] [%s]", isTab, aurora.Green("+"), aurora.Yellow(message), aurora.Green("OK"))
+	log.Println(logMsg)
+	_printFileLog(logMsg)
 }
 
 func Warning(message string, tab ...bool) {
@@ -104,7 +141,9 @@ func Warning(message string, tab ...bool) {
 			isTab = "\t"
 		}
 	}
-	log.Printf("%s[%s] [%s]", isTab, aurora.Yellow("***"), aurora.White(message).Bold())
+	logMsg := fmt.Sprintf("%s[%s] [%s]", isTab, aurora.Yellow("***"), aurora.White(message).Bold())
+	log.Println(logMsg)
+	_printFileLog(logMsg)
 }
 
 func Fail(message string, tab ...bool) {
@@ -114,11 +153,15 @@ func Fail(message string, tab ...bool) {
 			isTab = "\t"
 		}
 	}
-	log.Printf("%s[%s] [%s] [%s]", isTab, aurora.Red("-"), aurora.Yellow(message), aurora.Red("FAIL"))
+	logMsg := fmt.Sprintf("%s[%s] [%s] [%s]", isTab, aurora.Red("-"), aurora.Yellow(message), aurora.Red("FAIL"))
+	log.Println(logMsg)
+	_printFileLog(logMsg)
 }
 
 func Error(message string) {
-	log.Printf("\t[%s] [%s]", aurora.Red("X"), aurora.Red(message))
+	logMsg := fmt.Sprintf("\t[%s] [%s]", aurora.Red("X"), aurora.Red(message))
+	log.Println(logMsg)
+	_printFileLog(logMsg)
 }
 
 func Log(message string, logData string, tab ...bool) {
@@ -128,5 +171,7 @@ func Log(message string, logData string, tab ...bool) {
 			isTab = "\t"
 		}
 	}
-	log.Printf("%s[%s] [%s] (%s)", isTab, aurora.Yellow("LOG"), aurora.Yellow(message), aurora.Yellow(logData))
+	logMsg := fmt.Sprintf("%s[%s] [%s] (%s)", isTab, aurora.Yellow("LOG"), aurora.Yellow(message), aurora.Yellow(logData))
+	log.Println(logMsg)
+	_printFileLog(logMsg)
 }
