@@ -455,8 +455,12 @@ func RunCIA(scriptBlue string, scriptRed string) {
 	start_time := time.Now()
 
 	ch := make(chan bool)
-	go _RunGoRoutineCIA(ch, scriptBlue)
-	go _RunGoRoutineCIA(ch, scriptRed)
+	if scriptBlue != "" {
+		go _RunGoRoutineCIA(ch, scriptBlue)
+	}
+	if scriptRed != "" {
+		go _RunGoRoutineCIA(ch, scriptRed)
+	}
 	tools.Success(fmt.Sprintf("status channel [%t]", <-ch))
 	tools.Success(fmt.Sprintf("status channel [%t]", <-ch))
 	end_time := time.Now()
