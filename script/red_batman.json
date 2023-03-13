@@ -79,13 +79,13 @@
         "instruction": "loop-cellule-code",
         "action": "next",
         "code": {
-          "name": "explore-capture",
+          "name": "explore-destroy-capture",
           "good": "energy_seuil",
           "loop_code": [
             {
               "commande": "explore",
-              "instruction": "check-trapped-false",
-              "action": "capture-energy, capture-competence, next"
+              "instruction": "check-trapped-true",
+              "action": "destroy-max, next"
             }
           ]
         }
@@ -95,13 +95,13 @@
         "instruction": "loop-cellule-code",
         "action": "next",
         "code": {
-          "name": "explore-destroy-capture",
+          "name": "explore-capture",
           "good": "energy_seuil",
           "loop_code": [
             {
               "commande": "explore",
-              "instruction": "check-trapped-true",
-              "action": "destroy-max, next"
+              "instruction": "check-trapped-false",
+              "action": "capture-energy, capture-competence, next"
             }
           ]
         }

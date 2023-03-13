@@ -602,6 +602,26 @@ func (a *Algo) ActiveShellCode(targetID string, shellcode string) (ok bool, err 
 	}
 	return
 }
+func (a *Algo) InfosProgShellCode(targetID string, shellcode string) (ok bool, programmeInfos structure.ProgrammeInfos, err error) {
+	res, statusCode, err := api.RequestApi(
+		"GET",
+		fmt.Sprintf("%s/%s/%s/%s/%s/%s", a.ApiUrl, api.ROUTE_INFOS_PROG_SHELLCODE, a.Pc.ID, a.Pc.SecretID, targetID, shellcode),
+		nil,
+	)
+	a.StatusCode = statusCode
+	if err != nil {
+		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
+	} else {
+		if err != nil || statusCode != http.StatusOK {
+			tools.Fail("backup FAIL")
+			return false, programmeInfos, err
+		}
+		err = json.Unmarshal(res, &programmeInfos)
+		tools.Success("OK")
+		ok = true
+	}
+	return
+}
 func (a *Algo) ActiveCaptureFlag(Flag string) (ok bool, err error) {
 	_, statusCode, err := api.RequestApi(
 		"GET",

@@ -51,6 +51,7 @@ type ProgrammeInfos struct {
 	Name        string `json:"name"`
 	Level       int    `json:"level"`
 	SecteurID   int    `json:"secteur_id"`
+	PositionID  int    `json:"position_id"`
 	NbrCellules int    `json:"nbr_cellules"`
 	ValeurTotal int    `json:"valeur_total"`
 	EnergyTotal int    `json:"energy_total"`

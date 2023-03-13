@@ -270,6 +270,17 @@ func main() {
 			programme.ActiveShellCode(*pname, *apiteam, *targetID, *ShellCode)
 		}
 	})
+	app.Command("infos_by_shellcode", "Utilisation shellcode sur un programme pour infos", func(cmd *mowcli.Cmd) {
+		var (
+			pname     = cmd.StringOpt("n name", "", "nom du programme")
+			apiteam   = cmd.StringOpt("a api", "", "api a or b")
+			targetID  = cmd.StringOpt("t target", "", "ID programme cible")
+			ShellCode = cmd.StringOpt("s", "", "shellcode")
+		)
+		cmd.Action = func() {
+			programme.InfosProgShellCode(*pname, *apiteam, *targetID, *ShellCode)
+		}
+	})
 	app.Command("acf", "[blueteam] activer capture flag sur zone de transfert", func(cmd *mowcli.Cmd) {
 		var (
 			pname   = cmd.StringOpt("n name", "", "nom du programme")

@@ -424,6 +424,18 @@ func ActiveShellCode(name string, apiteam string, targetID string, ShellCode str
 		current.ActiveShellCode(targetID, ShellCode)
 	}
 }
+func InfosProgShellCode(name string, apiteam string, targetID string, ShellCode string) {
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
+	if err != nil {
+		tools.Fail(err.Error())
+	} else {
+		_, programmeinfos, err := current.InfosProgShellCode(targetID, ShellCode)
+		if err != nil {
+			tools.Fail(err.Error())
+		}
+		tools.PrintProgrammeInfos(programmeinfos)
+	}
+}
 func ActiveCaptureFlag(name string, apiteam string, Flag string) {
 	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
