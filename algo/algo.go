@@ -16,7 +16,7 @@ import (
 const (
 	TIME_MILLISECONDE = 5000
 	ENERGY_MAX_ATTACK = 10
-	MAX_CELLULES      = 9
+	MAX_CELLULES      = 4
 	MAX_VALEUR        = 100
 )
 
@@ -34,46 +34,34 @@ func _LoadProgramme(name string) (pc structure.ProgrammeContainer, err error) {
 	pc, err = _GetProgrammeFile(name)
 	return
 }
-func _LoadProgrammeBlueTeam(name string, apiteam string) (psi structure.ProgrammeStatusInfos, pc structure.ProgrammeContainer, err error) {
+func _LoadProgrammeBlueTeam(name string, apiUrl string) (psi structure.ProgrammeStatusInfos, pc structure.ProgrammeContainer, err error) {
 	pc, err = _GetProgrammeFile(name)
 	if pc.ID == "" || err != nil {
 		//tools.Fail(fmt.Sprintf("no content [%s][%v]", name, pc))
-		pc, _ = _CreateProgramme(name, apiteam)
+		pc, _ = _CreateProgramme(name, apiUrl)
 		return
 	} else {
-		url := ""
-		if apiteam == "a" {
-			url = api.API_URL_A
-		} else {
-			url = api.API_URL_B
-		}
 		reqBodyBytes := new(bytes.Buffer)
 		json.NewEncoder(reqBodyBytes).Encode(pc)
 		res, statusCode, _ := api.RequestApi(
 			"POST",
-			fmt.Sprintf("%s/%s", url, api.ROUTE_LOAD_PROGRAMME_BLUE_TEAM),
+			fmt.Sprintf("%s/%s", apiUrl, api.ROUTE_LOAD_PROGRAMME_BLUE_TEAM),
 			reqBodyBytes.Bytes(),
 		)
 		if statusCode == http.StatusCreated || statusCode == http.StatusOK {
 			_ = json.Unmarshal(res, &psi)
 		} else {
-			pc, _ = _CreateProgramme(name, apiteam)
+			pc, _ = _CreateProgramme(name, apiUrl)
 		}
 	}
 	return
 }
-func _CreateProgramme(name string, apiteam string) (programme structure.ProgrammeContainer, err error) {
+func _CreateProgramme(name string, apiUrl string) (programme structure.ProgrammeContainer, err error) {
 	tools.Title(fmt.Sprintf("création programme [%s]", name))
 	if _IsExistFile(name) == false {
-		url := ""
-		if apiteam == "a" {
-			url = api.API_URL_A
-		} else {
-			url = api.API_URL_B
-		}
 		res, statusCode, err := api.RequestApi(
 			"GET",
-			fmt.Sprintf("%s/%s/%s", url, api.ROUTE_NEW_PROGRAMME, name),
+			fmt.Sprintf("%s/%s/%s", apiUrl, api.ROUTE_NEW_PROGRAMME, name),
 			nil,
 		)
 		if err != nil {
@@ -111,7 +99,7 @@ func _GetProgrammeFile(name string) (pc structure.ProgrammeContainer, err error)
 	}
 	return
 }
-func NewAlgo(name string, apiteam string) (algo *Algo, err error) {
+func NewAlgo(name string, apiUrl string) (algo *Algo, err error) {
 	tools.Title(fmt.Sprintf("chargement programme [%s]", name))
 	pc, err := _LoadProgramme(name)
 	if err != nil {
@@ -122,11 +110,7 @@ func NewAlgo(name string, apiteam string) (algo *Algo, err error) {
 			Name: name,
 			Pc:   pc,
 		}
-		if apiteam == "a" {
-			algo.ApiUrl = api.API_URL_A
-		} else {
-			algo.ApiUrl = api.API_URL_B
-		}
+		algo.ApiUrl = apiUrl
 		if algo.Pc.ID == "" {
 			if ok, _ := algo.GetInfosProgramme(); !ok {
 				err = errors.New("erreur get infos programme")
@@ -137,19 +121,14 @@ func NewAlgo(name string, apiteam string) (algo *Algo, err error) {
 	}
 	return algo, err
 }
-func NewAlgoBlueTeam(name string, apiteam string) (algo *Algo, err error) {
+func NewAlgoBlueTeam(name string, apiUrl string) (algo *Algo, err error) {
 	tools.Title(fmt.Sprintf("chargement programme [%s]", name))
-	psi, pc, err := _LoadProgrammeBlueTeam(name, apiteam)
+	psi, pc, err := _LoadProgrammeBlueTeam(name, apiUrl)
 	algo = &Algo{
 		Name:   name,
 		Psi:    psi,
 		Pc:     pc,
-		ApiUrl: apiteam,
-	}
-	if apiteam == "a" {
-		algo.ApiUrl = api.API_URL_A
-	} else {
-		algo.ApiUrl = api.API_URL_B
+		ApiUrl: apiUrl,
 	}
 	if algo.Psi.Programme.ID == "" {
 		if ok, _ := algo.GetInfosProgramme(); !ok {
@@ -160,21 +139,30 @@ func NewAlgoBlueTeam(name string, apiteam string) (algo *Algo, err error) {
 	algo.ID = algo.Psi.Programme.ID
 	return algo, err
 }
-func (a *Algo) LoadProgramme() (ok bool, err error) {
-	reqBodyBytes := new(bytes.Buffer)
-	json.NewEncoder(reqBodyBytes).Encode(a.Pc)
-	res, statusCode, _ := api.RequestApi(
-		"POST",
-		fmt.Sprintf("%s/%s", a.ApiUrl, api.ROUTE_LOAD_PROGRAMME),
-		reqBodyBytes.Bytes(),
-	)
-	if statusCode == http.StatusCreated || statusCode == http.StatusOK {
-		_ = json.Unmarshal(res, a.Psi)
-		return true, err
+func (a *Algo) LoadProgramme(blue bool) (ok bool, err error) {
+	if blue {
+		a.Psi, a.Pc, err = _LoadProgrammeBlueTeam(a.Name, a.ApiUrl)
+		if a.Psi.Programme.ID == "" {
+			err = errors.New("erreur load team blue")
+		} else {
+			ok = true
+		}
 	} else {
-		err = errors.New("erreur chargement programme")
+		reqBodyBytes := new(bytes.Buffer)
+		json.NewEncoder(reqBodyBytes).Encode(a.Pc)
+		res, statusCode, _ := api.RequestApi(
+			"POST",
+			fmt.Sprintf("%s/%s", a.ApiUrl, api.ROUTE_LOAD_PROGRAMME),
+			reqBodyBytes.Bytes(),
+		)
+		if statusCode == http.StatusCreated || statusCode == http.StatusOK {
+			_ = json.Unmarshal(res, a.Psi)
+			ok = true
+		} else {
+			err = errors.New("erreur chargement programme")
+		}
 	}
-	return false, err
+	return ok, err
 }
 func (a *Algo) GetInfosProgramme() (ok bool, err error) {
 	//tools.Title(fmt.Sprintf("infos programme [%s]", a.Name))
@@ -226,6 +214,7 @@ func (a *Algo) Move(secteurID string, zoneID string) (ok bool, err error) {
 		fmt.Sprintf("%s/%s/%s/%s/%s/%s", a.ApiUrl, api.ROUTE_MOVE_PROGRAMME, a.Pc.ID, a.Pc.SecretID, secteurID, zoneID),
 		nil,
 	)
+	a.StatusCode = statusCode
 	if err != nil || statusCode != http.StatusOK {
 		return false, err
 	}
@@ -240,6 +229,7 @@ func (a *Algo) QuickMove(secteurID string, zoneID string) (ok bool, err error) {
 		fmt.Sprintf("%s/%s/%s/%s/%s/%s", a.ApiUrl, api.ROUTE_QUICK_MOVE_PROGRAMME, a.Pc.ID, a.Pc.SecretID, secteurID, zoneID),
 		nil,
 	)
+	a.StatusCode = statusCode
 	if err != nil || statusCode != http.StatusOK {
 		return false, err
 	}
@@ -254,6 +244,7 @@ func (a *Algo) EstimateMove(secteurID string, zoneID string) (data structure.Mov
 		fmt.Sprintf("%s/%s/%s/%s/%s/%s", a.ApiUrl, api.ROUTE_ESTIMATE_MOVE_PROGRAMME, a.Pc.ID, a.Pc.SecretID, secteurID, zoneID),
 		nil,
 	)
+	a.StatusCode = statusCode
 	if err != nil || statusCode != http.StatusOK {
 		return data, err
 	}
@@ -267,6 +258,7 @@ func (a *Algo) StopMove() (ok bool, err error) {
 		fmt.Sprintf("%s/%s/%s/%s", a.ApiUrl, api.ROUTE_STOP_MOVE_PROGRAMME, a.Pc.ID, a.Pc.SecretID),
 		nil,
 	)
+	a.StatusCode = statusCode
 	if err != nil || statusCode != http.StatusOK {
 		return false, err
 	}
@@ -280,6 +272,7 @@ func (a *Algo) Scan() (ok bool, res []byte, err error) {
 		fmt.Sprintf("%s/%s/%s/%s", a.ApiUrl, api.ROUTE_SCAN_PROGRAMME, a.Pc.ID, a.Pc.SecretID),
 		nil,
 	)
+	a.StatusCode = statusCode
 	if err != nil || statusCode != http.StatusOK {
 		return false, res, err
 	}
@@ -292,6 +285,7 @@ func (a *Algo) Explore(celluleID int) (ok bool, res []byte, err error) {
 		fmt.Sprintf("%s/%s/%s/%s/%d", a.ApiUrl, api.ROUTE_EXPLORE_PROGRAMME, a.Pc.ID, a.Pc.SecretID, celluleID),
 		nil,
 	)
+	a.StatusCode = statusCode
 	if err != nil || statusCode != http.StatusOK {
 		return false, res, err
 	}
@@ -305,6 +299,7 @@ func (a *Algo) DestroyZone(celluleID int, energy int) (ok bool, res []byte, err 
 		fmt.Sprintf("%s/%s/%s/%s/%d/%d", a.ApiUrl, api.ROUTE_DESTROY_ZONE, a.Pc.ID, a.Pc.SecretID, celluleID, energy),
 		nil,
 	)
+	a.StatusCode = statusCode
 	if err != nil || statusCode != http.StatusOK {
 		return false, res, err
 	}
@@ -320,6 +315,7 @@ func (a *Algo) Destroy(celluleID int, targetID string, energy int) (ok bool, res
 		fmt.Sprintf("%s/%s/%s/%s/%d/%s/%d", a.ApiUrl, api.ROUTE_DESTROY_PROGRAMME, a.Pc.ID, a.Pc.SecretID, celluleID, targetID, energy),
 		nil,
 	)
+	a.StatusCode = statusCode
 	if err != nil || statusCode != http.StatusOK {
 		return false, res, err
 	}
@@ -335,6 +331,7 @@ func (a *Algo) Rebuild(celluleID int, targetID string, energy int) (ok bool, res
 		fmt.Sprintf("%s/%s/%s/%s/%d/%s/%d", a.ApiUrl, api.ROUTE_REBUILD_PROGRAMME, a.Pc.ID, a.Pc.SecretID, celluleID, targetID, energy),
 		nil,
 	)
+	a.StatusCode = statusCode
 	if err != nil || statusCode != http.StatusOK {
 		return false, res, err
 	}
@@ -348,6 +345,7 @@ func (a *Algo) GetStatusGrid() (err error) {
 		fmt.Sprintf("%s/%s", a.ApiUrl, api.ROUTE_STATUS_GRID),
 		nil,
 	)
+	a.StatusCode = statusCode
 	if err != nil {
 		err = errors.New(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
 	} else {
@@ -461,6 +459,7 @@ func (a *Algo) CaptureCellData(celluleID int, index int) (ok bool, err error) {
 		fmt.Sprintf("%s/%s/%s/%s/%d/%d", a.ApiUrl, api.ROUTE_CAPTURE_CELL_DATA, a.Pc.ID, a.Pc.SecretID, celluleID, index),
 		nil,
 	)
+	a.StatusCode = statusCode
 	if err != nil {
 		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
 	} else {
@@ -470,7 +469,7 @@ func (a *Algo) CaptureCellData(celluleID int, index int) (ok bool, err error) {
 		a.Psi = structure.ProgrammeStatusInfos{}
 		err = json.Unmarshal(res, &a.Psi)
 	}
-	return
+	return true, err
 }
 func (a *Algo) CaptureTargetData(celluleID int, targetID string) (ok bool, err error) {
 	res, statusCode, err := api.RequestApi(
@@ -478,6 +477,7 @@ func (a *Algo) CaptureTargetData(celluleID int, targetID string) (ok bool, err e
 		fmt.Sprintf("%s/%s/%s/%s/%d/%s", a.ApiUrl, api.ROUTE_CAPTURE_TARGET_DATA, a.Pc.ID, a.Pc.SecretID, celluleID, targetID),
 		nil,
 	)
+	a.StatusCode = statusCode
 	if err != nil {
 		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
 	} else {
@@ -487,7 +487,7 @@ func (a *Algo) CaptureTargetData(celluleID int, targetID string) (ok bool, err e
 		a.Psi = structure.ProgrammeStatusInfos{}
 		err = json.Unmarshal(res, &a.Psi)
 	}
-	return
+	return true, err
 }
 func (a *Algo) CaptureTargetEnergy(celluleID int, targetID string) (ok bool, err error) {
 	res, statusCode, err := api.RequestApi(
@@ -495,6 +495,7 @@ func (a *Algo) CaptureTargetEnergy(celluleID int, targetID string) (ok bool, err
 		fmt.Sprintf("%s/%s/%s/%s/%d/%s", a.ApiUrl, api.ROUTE_CAPTURE_TARGET_ENERGY, a.Pc.ID, a.Pc.SecretID, celluleID, targetID),
 		nil,
 	)
+	a.StatusCode = statusCode
 	if err != nil {
 		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
 	} else {
@@ -504,7 +505,7 @@ func (a *Algo) CaptureTargetEnergy(celluleID int, targetID string) (ok bool, err
 		a.Psi = structure.ProgrammeStatusInfos{}
 		err = json.Unmarshal(res, &a.Psi)
 	}
-	return
+	return true, err
 }
 func (a *Algo) CaptureCellEnergy(celluleID int, index int) (ok bool, err error) {
 	res, statusCode, err := api.RequestApi(
@@ -512,6 +513,7 @@ func (a *Algo) CaptureCellEnergy(celluleID int, index int) (ok bool, err error) 
 		fmt.Sprintf("%s/%s/%s/%s/%d/%d", a.ApiUrl, api.ROUTE_CAPTURE_CELL_ENERGY, a.Pc.ID, a.Pc.SecretID, celluleID, index),
 		nil,
 	)
+	a.StatusCode = statusCode
 	if err != nil {
 		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
 	} else {
@@ -521,7 +523,7 @@ func (a *Algo) CaptureCellEnergy(celluleID int, index int) (ok bool, err error) 
 		a.Psi = structure.ProgrammeStatusInfos{}
 		err = json.Unmarshal(res, &a.Psi)
 	}
-	return
+	return true, err
 }
 func (a *Algo) Equilibrium() (ok bool, err error) {
 	res, statusCode, err := api.RequestApi(
@@ -529,6 +531,7 @@ func (a *Algo) Equilibrium() (ok bool, err error) {
 		fmt.Sprintf("%s/%s/%s/%s", a.ApiUrl, api.ROUTE_EQUILIBRiUM, a.Pc.ID, a.Pc.SecretID),
 		nil,
 	)
+	a.StatusCode = statusCode
 	if err != nil {
 		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
 	} else {
@@ -546,6 +549,7 @@ func (a *Algo) PushFlag() (ok bool, err error) {
 		fmt.Sprintf("%s/%s/%s/%s", a.ApiUrl, api.ROUTE_PUSH_FLAG, a.Pc.ID, a.Pc.SecretID),
 		nil,
 	)
+	a.StatusCode = statusCode
 	if err != nil {
 		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
 	} else {
@@ -558,7 +562,7 @@ func (a *Algo) PushFlag() (ok bool, err error) {
 		tools.Success("backup OK")
 		ok = true
 	}
-	return
+	return ok, err
 }
 func (a *Algo) ShellCode() (ok bool, data []structure.ShellcodeData, err error) {
 	res, statusCode, err := api.RequestApi(
@@ -566,6 +570,7 @@ func (a *Algo) ShellCode() (ok bool, data []structure.ShellcodeData, err error) 
 		fmt.Sprintf("%s/%s/%s/%s", a.ApiUrl, api.ROUTE_ZONE_SHELLCODE, a.Pc.ID, a.Pc.SecretID),
 		nil,
 	)
+	a.StatusCode = statusCode
 	if err != nil {
 		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
 	} else {
@@ -584,6 +589,7 @@ func (a *Algo) ActiveShellCode(targetID string, shellcode string) (ok bool, err 
 		fmt.Sprintf("%s/%s/%s/%s/%s/%s", a.ApiUrl, api.ROUTE_ACTIVE_SHELLCODE, a.Pc.ID, a.Pc.SecretID, targetID, shellcode),
 		nil,
 	)
+	a.StatusCode = statusCode
 	if err != nil {
 		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
 	} else {
@@ -596,12 +602,33 @@ func (a *Algo) ActiveShellCode(targetID string, shellcode string) (ok bool, err 
 	}
 	return
 }
+func (a *Algo) InfosProgShellCode(targetID string, shellcode string) (ok bool, programmeInfos structure.ProgrammeInfos, err error) {
+	res, statusCode, err := api.RequestApi(
+		"GET",
+		fmt.Sprintf("%s/%s/%s/%s/%s/%s", a.ApiUrl, api.ROUTE_INFOS_PROG_SHELLCODE, a.Pc.ID, a.Pc.SecretID, targetID, shellcode),
+		nil,
+	)
+	a.StatusCode = statusCode
+	if err != nil {
+		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
+	} else {
+		if err != nil || statusCode != http.StatusOK {
+			tools.Fail("backup FAIL")
+			return false, programmeInfos, err
+		}
+		err = json.Unmarshal(res, &programmeInfos)
+		tools.Success("OK")
+		ok = true
+	}
+	return
+}
 func (a *Algo) ActiveCaptureFlag(Flag string) (ok bool, err error) {
 	_, statusCode, err := api.RequestApi(
 		"GET",
 		fmt.Sprintf("%s/%s/%s/%s/%s", a.ApiUrl, api.ROUTE_ACTIVE_CAPTURE_FLAG, a.Pc.ID, a.Pc.SecretID, Flag),
 		nil,
 	)
+	a.StatusCode = statusCode
 	if err != nil {
 		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
 	} else {
@@ -611,6 +638,43 @@ func (a *Algo) ActiveCaptureFlag(Flag string) (ok bool, err error) {
 		}
 		tools.Success("OK")
 		ok = true
+	}
+	return
+}
+func (a *Algo) GetLog(celluleID int) (celluleLogs map[int]structure.CelluleLog, err error) {
+	res, statusCode, err := api.RequestApi(
+		"GET",
+		fmt.Sprintf("%s/%s/%s/%s/%d", a.ApiUrl, api.ROUTE_GET_CELLULE_LOG, a.Pc.ID, a.Pc.SecretID, celluleID),
+		nil,
+	)
+	a.StatusCode = statusCode
+	if err != nil {
+		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
+	} else {
+		err = json.Unmarshal(res, &celluleLogs)
+	}
+	return
+}
+func (a *Algo) CleanLog(celluleID int) (err error) {
+	_, statusCode, err := api.RequestApi(
+		"GET",
+		fmt.Sprintf("%s/%s/%s/%s/%d", a.ApiUrl, api.ROUTE_CLEAN_CELLULE_LOG, a.Pc.ID, a.Pc.SecretID, celluleID),
+		nil,
+	)
+	a.StatusCode = statusCode
+	if err != nil {
+		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
+	}
+	return
+}
+func (a *Algo) CleanLogAll() (err error) {
+	for _, cellule := range a.Psi.Programme.Cellules {
+		if cellule.Exploration {
+			err = a.CleanLog(cellule.ID)
+			if err != nil {
+				return
+			}
+		}
 	}
 	return
 }

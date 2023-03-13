@@ -32,4 +32,5 @@ const (
 	ROUTE_ZONE_SHELLCODE             = "v1/zone/shellcode"
 	ROUTE_ACTIVE_SHELLCODE           = "v1/active/shellcode"
 	ROUTE_ACTIVE_CAPTURE_FLAG        = "v1/active/capture/flag"
+	ROUTE_INFOS_PROG_SHELLCODE       = "v1/programme/infos/shellcode"
 )

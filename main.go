@@ -270,6 +270,17 @@ func main() {
 			programme.ActiveShellCode(*pname, *apiteam, *targetID, *ShellCode)
 		}
 	})
+	app.Command("infos_by_shellcode", "Utilisation shellcode sur un programme pour infos", func(cmd *mowcli.Cmd) {
+		var (
+			pname     = cmd.StringOpt("n name", "", "nom du programme")
+			apiteam   = cmd.StringOpt("a api", "", "api a or b")
+			targetID  = cmd.StringOpt("t target", "", "ID programme cible")
+			ShellCode = cmd.StringOpt("s", "", "shellcode")
+		)
+		cmd.Action = func() {
+			programme.InfosProgShellCode(*pname, *apiteam, *targetID, *ShellCode)
+		}
+	})
 	app.Command("acf", "[blueteam] activer capture flag sur zone de transfert", func(cmd *mowcli.Cmd) {
 		var (
 			pname   = cmd.StringOpt("n name", "", "nom du programme")
@@ -278,6 +289,15 @@ func main() {
 		)
 		cmd.Action = func() {
 			programme.ActiveCaptureFlag(*pname, *apiteam, *Flag)
+		}
+	})
+	app.Command("cia", "run script cia (commande-instruction-action)", func(cmd *mowcli.Cmd) {
+		var (
+			scriptBlue = cmd.StringOpt("b blue", "", "nom du script team blue")
+			scriptRed  = cmd.StringOpt("r red", "", "nom du script team red")
+		)
+		cmd.Action = func() {
+			programme.RunCIA(*scriptBlue, *scriptRed)
 		}
 	})
 	app.Action = func() {

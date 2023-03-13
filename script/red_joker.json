@@ -1,0 +1,111 @@
+{
+  "programme_name": "joker",
+  "auto_connect": true,
+  "error_seuil": 10,
+  "api": {
+    "url": "http://195.154.84.18:20180",
+    "team_blue": false,
+    "team_red": true
+  },
+  "loop_cia": {
+    "loop_params": {
+      "stop": false,
+      "random": true,
+      "energy_seuil": 10,
+      "rebuild": true,
+      "attack": true,
+      "shellcode": true
+    },
+    "loop_code": [
+      {
+        "commande": "move",
+        "instruction": "wait-navigation-false",
+        "action": "code,stop-isnot-good",
+        "code": {
+          "name": "search-flag",
+          "good": "",
+          "loop_code": [
+            {
+              "commande": "scan",
+              "instruction": "loop-cellule-next",
+              "action": "next"
+            },
+            {
+              "commande": "explore",
+              "instruction": "check-trapped-true",
+              "action": "destroy-max, next"
+            },
+            {
+              "commande": "searchflag",
+              "instruction": "check-flag-true",
+              "action": "capture,next"
+            }
+          ]
+        }
+      },
+      {
+        "commande": "move_zt",
+        "instruction": "wait-navigation-false",
+        "action": "code,next",
+        "code": {
+          "name": "push-flag",
+          "good": "flag_found",
+          "loop_code": [
+            {
+              "commande": "pushflag",
+              "instruction": "nop",
+              "action": "stop"
+            }
+          ]
+        }
+      },
+      {
+        "commande": "rebuild",
+        "instruction": "check-cellule-valeur",
+        "action": "rebuild,next"
+      },
+      {
+        "commande": "attack",
+        "instruction": "check-cellule-log",
+        "action": "attack-max,next"
+      },
+      {
+        "commande": "shellcode",
+        "instruction": "active-shellcode-save",
+        "action": "active-shellcode, next"
+      },
+      {
+        "commande": "scan",
+        "instruction": "loop-cellule-code",
+        "action": "next",
+        "code": {
+          "name": "explore-destroy-capture",
+          "good": "energy_seuil",
+          "loop_code": [
+            {
+              "commande": "explore",
+              "instruction": "check-trapped-true",
+              "action": "destroy-max, next"
+            }
+          ]
+        }
+      },
+      {
+        "commande": "scan",
+        "instruction": "loop-cellule-code",
+        "action": "next",
+        "code": {
+          "name": "explore-capture",
+          "good": "energy_seuil",
+          "loop_code": [
+            {
+              "commande": "explore",
+              "instruction": "check-trapped-false",
+              "action": "capture-energy, capture-competence, next"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
