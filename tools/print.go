@@ -493,3 +493,34 @@ func PrintShellCodeData(datas []structure.ShellcodeData) {
 	}
 	return
 }
+func PrintProgrammeInfos(programme structure.ProgrammeInfos) {
+	var header = []string{"Name", "Level", "SecteurID", "PositionID", "Valeur", "Energy", "Status", "Exploration"}
+	var dataList [][]string
+
+	status := ""
+	if programme.Status {
+		status = aurora.Green("OK").String()
+	} else {
+		status = aurora.Red("NOK").String()
+	}
+	exploration := ""
+	if programme.Exploration {
+		exploration = aurora.Green("OK").String()
+	} else {
+		exploration = aurora.Red("NOK").String()
+	}
+	dataList = append(dataList, []string{
+		programme.Name,
+		fmt.Sprintf("%d", programme.Level),
+		fmt.Sprintf("%d", programme.SecteurID),
+		fmt.Sprintf("%d", programme.PositionID),
+		fmt.Sprintf("%d", programme.ValeurTotal),
+		fmt.Sprintf("%d", programme.EnergyTotal),
+		status,
+		exploration,
+	})
+	if len(dataList) > 0 {
+		PrintColorTable(header, dataList, "programme infos")
+	}
+	return
+}

@@ -469,7 +469,7 @@ func (a *Algo) CaptureCellData(celluleID int, index int) (ok bool, err error) {
 		a.Psi = structure.ProgrammeStatusInfos{}
 		err = json.Unmarshal(res, &a.Psi)
 	}
-	return
+	return true, err
 }
 func (a *Algo) CaptureTargetData(celluleID int, targetID string) (ok bool, err error) {
 	res, statusCode, err := api.RequestApi(
@@ -487,7 +487,7 @@ func (a *Algo) CaptureTargetData(celluleID int, targetID string) (ok bool, err e
 		a.Psi = structure.ProgrammeStatusInfos{}
 		err = json.Unmarshal(res, &a.Psi)
 	}
-	return
+	return true, err
 }
 func (a *Algo) CaptureTargetEnergy(celluleID int, targetID string) (ok bool, err error) {
 	res, statusCode, err := api.RequestApi(
@@ -505,7 +505,7 @@ func (a *Algo) CaptureTargetEnergy(celluleID int, targetID string) (ok bool, err
 		a.Psi = structure.ProgrammeStatusInfos{}
 		err = json.Unmarshal(res, &a.Psi)
 	}
-	return
+	return true, err
 }
 func (a *Algo) CaptureCellEnergy(celluleID int, index int) (ok bool, err error) {
 	res, statusCode, err := api.RequestApi(
@@ -562,7 +562,7 @@ func (a *Algo) PushFlag() (ok bool, err error) {
 		tools.Success("backup OK")
 		ok = true
 	}
-	return
+	return ok, err
 }
 func (a *Algo) ShellCode() (ok bool, data []structure.ShellcodeData, err error) {
 	res, statusCode, err := api.RequestApi(
@@ -597,6 +597,26 @@ func (a *Algo) ActiveShellCode(targetID string, shellcode string) (ok bool, err 
 			tools.Fail("backup FAIL")
 			return false, err
 		}
+		tools.Success("OK")
+		ok = true
+	}
+	return
+}
+func (a *Algo) InfosProgShellCode(targetID string, shellcode string) (ok bool, programmeInfos structure.ProgrammeInfos, err error) {
+	res, statusCode, err := api.RequestApi(
+		"GET",
+		fmt.Sprintf("%s/%s/%s/%s/%s/%s", a.ApiUrl, api.ROUTE_INFOS_PROG_SHELLCODE, a.Pc.ID, a.Pc.SecretID, targetID, shellcode),
+		nil,
+	)
+	a.StatusCode = statusCode
+	if err != nil {
+		tools.Fail(fmt.Sprintf("status code [%d] - [%s]", statusCode, err.Error()))
+	} else {
+		if err != nil || statusCode != http.StatusOK {
+			tools.Fail("backup FAIL")
+			return false, programmeInfos, err
+		}
+		err = json.Unmarshal(res, &programmeInfos)
 		tools.Success("OK")
 		ok = true
 	}

@@ -424,6 +424,18 @@ func ActiveShellCode(name string, apiteam string, targetID string, ShellCode str
 		current.ActiveShellCode(targetID, ShellCode)
 	}
 }
+func InfosProgShellCode(name string, apiteam string, targetID string, ShellCode string) {
+	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
+	if err != nil {
+		tools.Fail(err.Error())
+	} else {
+		_, programmeinfos, err := current.InfosProgShellCode(targetID, ShellCode)
+		if err != nil {
+			tools.Fail(err.Error())
+		}
+		tools.PrintProgrammeInfos(programmeinfos)
+	}
+}
 func ActiveCaptureFlag(name string, apiteam string, Flag string) {
 	current, err := algo.NewAlgo(name, GetApiUrl(apiteam))
 	if err != nil {
@@ -455,8 +467,12 @@ func RunCIA(scriptBlue string, scriptRed string) {
 	start_time := time.Now()
 
 	ch := make(chan bool)
-	go _RunGoRoutineCIA(ch, scriptBlue)
-	go _RunGoRoutineCIA(ch, scriptRed)
+	if scriptBlue != "" {
+		go _RunGoRoutineCIA(ch, scriptBlue)
+	}
+	if scriptRed != "" {
+		go _RunGoRoutineCIA(ch, scriptRed)
+	}
 	tools.Success(fmt.Sprintf("status channel [%t]", <-ch))
 	tools.Success(fmt.Sprintf("status channel [%t]", <-ch))
 	end_time := time.Now()

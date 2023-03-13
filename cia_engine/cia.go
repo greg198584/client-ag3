@@ -258,6 +258,9 @@ func (cia *CiaEngine) Run() (err error) {
 					if cia.LoopCIA.LoopParams.ShellCode {
 						cia.Status.ShellCode = true
 						ok = true
+					} else {
+						ok = true
+						forceNext = true
 					}
 					break
 				default:
@@ -630,16 +633,19 @@ func (cia *CiaEngine) LoopCodeAction(action string, cellule structure.CelluleInf
 						if data.Energy > 0 {
 							ok, _ := cia.Algo.CaptureCellEnergy(cellule.ID, data.ID)
 							if !ok {
-								return
+								tools.Warning("stop capture energy")
+								break
 							}
 						}
 					}
 				} else if actionSplit[1] == "competence" {
 					for _, data := range celluleData {
+						tools.Info(fmt.Sprintf("cellule id tentative capture [%d] index [%d]", cellule.ID, data.ID))
 						if data.Competence {
 							ok, _ := cia.Algo.CaptureCellData(cellule.ID, data.ID)
 							if !ok {
-								return
+								tools.Warning("stop capture competence")
+								break
 							}
 						}
 					}
