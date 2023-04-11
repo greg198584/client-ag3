@@ -51,6 +51,10 @@ Rejoignez une équipe et participez à la bataille pour capturer le drapeau de l
 - un groupe ${\color{blue}BLUE TEAM}$ equipe B defend la grille B contre equipe A pour proteger flag B
 - un groupe ${\color{red}RED TEAM}$ equipe B attaque la grille A pour capture flag A
 
+### API
+
+projet AG-3 API: https://gitlab.com/greg198584/ag3
+
 ### Usage 
 
 ```
