@@ -8,31 +8,31 @@ Les joueurs pourront choisir de rejoindre l'une des deux équipes, A ou B.
 
 Chaque équipe dispose d'une grille, Grille A et Grille B, avec leur propre drapeau respectif. 
 
-Les joueurs peuvent demander à l'API AG-3 une instance (appelée programme) qui agit comme un pointeur sur la grille.
+Les joueurs peuvent demander à l'API AG-3 une instance appelée PAG ( Programme Api Grid ) qui agit comme un pointeur sur la grille.
 
-Les programmes des joueurs disposent de 4 cellules, chacune ayant un niveau d'énergie qui diminue à chaque action (attaque, déplacement, réparation des cellules endommagées). 
+Les PAGs des joueurs disposent de 4 cellules, chacune ayant un niveau d'énergie qui diminue à chaque action (attaque, déplacement, réparation des cellules endommagées). 
 
-Les joueurs doivent se déplacer sur une zone pour explorer les cellules correspondantes. Lorsqu'un programme est sur une zone, il peut capturer de l'énergie ou le drapeau si présent. 
+Les joueurs doivent se déplacer sur une zone pour explorer les cellules correspondantes. Lorsqu'un PAG est sur une zone, il peut capturer de l'énergie ou le drapeau si présent. 
 
 Cependant, la capture laisse des traces (logs) qui peuvent être détectées par l'équipe adverse. 
 
 Si l'ID du joueur est découvert, il peut être attaqué lors d'une exploration, et inversement.
 
-Chaque cellule du programme peut explorer et capturer les cellules correspondantes de la zone (par exemple, la cellule 1 du programme peut explorer et capturer la cellule 1 de la zone). 
+Chaque cellule du PAG peut explorer et capturer les cellules correspondantes de la zone (par exemple, la cellule 1 du PAG peut explorer et capturer la cellule 1 de la zone). 
 
-Les programmes peuvent également attaquer d'autres programmes. Pour lancer une attaque, les deux programmes doivent être en mode exploration chacun sur la cellule correspondante. 
+Les PAGs peuvent également attaquer d'autres PAGs. Pour lancer une attaque, les deux PAGs doivent être en mode exploration chacun sur la cellule correspondante. 
 
 Cependant, une attaque est possible que sur des cellules avec 100% de leur valeur.
 
 Les joueurs peuvent nettoyer les logs pour éviter d'être détectés par l'équipe adverse. 
 
-Ils peuvent également capturer des compétences pour améliorer leur programme. 
+Ils peuvent également capturer des compétences pour améliorer leur PAG. 
 
 Les compétences peuvent être utilisées pour générer un shellcode qui sera envoyé à l'API AG-3. 
 
-L'API retourne alors une liste des programmes avec leur ID et le shellcode généré. 
+L'API retourne alors une liste des PAGs avec leur ID et le shellcode généré. 
 
-Si un joueur envoie une requête sur la zone avec le shellcode et l'ID correspondant, et que le programme qui a cet ID est sur la zone, il perd toutes ses cellules en exploration et leur valeur est réinitialisée à 0. 
+Si un joueur envoie une requête sur la zone avec le shellcode et l'ID correspondant, et que le PAG qui a cet ID est sur la zone, il perd toutes ses cellules en exploration et leur valeur est réinitialisée à 0. 
 
 Pour sortir du mode exploration, les cellules doivent être à 100% de leur valeur. Pour reconstruire les cellules et sortir de l'exploration, les joueurs ont besoin d'énergie.
 
@@ -72,29 +72,29 @@ Options:
   -v, --version      Show the version and exit
                      
 Commands:            
-  create             creation programme et chargement sur la grille
-  load               charger programme existant sur la grille
-  move               deplacer un programme sur la grille
-  quick_move         [blue team] deplacer un programme sur la grille
+  create             creation PAG et chargement sur la grille
+  load               charger PAG existant sur la grille
+  move               deplacer un PAG sur la grille
+  quick_move         [blue team] deplacer un PAG sur la grille
   estimate_move      estimation temp deplacement sur zone
   stop_move          stopper navigation en cours ( retour zone de depart )
   scan               scan infos de la zone pour
   explore            exploration de cellule de zone
-  destroy            destroy cellule programme
-  rebuild            reconstruire cellule programme
-  capture            capture data-energy cellule programme et zone
-  equilibrium        repartir energie du programme uniformement
+  destroy            destroy cellule PAG
+  rebuild            reconstruire cellule PAG
+  capture            capture data-energy cellule PAG et zone
+  equilibrium        repartir energie du PAG uniformement
   pushflag           push drapeau dans zone de transfert
   status             status grille
-  infos              infos programme
+  infos              infos PAG
   navigation_stop    stop mode navigation
   exploration_stop   stop exploration
-  monitoring         position + status programme monitoring
+  monitoring         position + status PAG monitoring
   log                info log cellule
   clean_log          clean log cellule
   destroy_zone       destroy cellule zone current
   shellcode          generate shellcode sur programmme present sur zone
-  active_shellcode   activer un shellcode sur un programme
+  active_shellcode   activer un shellcode sur un PAG
   acf                [blueteam] activer capture flag sur zone de transfert
   cia                run script cia (commande-instruction-action)
                      
